@@ -2,7 +2,7 @@ const axios = require('axios');
 
 export default async function (req, res) {
     const query = req.query.query
-    const apiKey = process.env.YOUTUBE_API_KEY;
+    const apiKey = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY;
     const endpoint = 'https://www.googleapis.com/youtube/v3/search';
     const params = {
         part: 'snippet',
