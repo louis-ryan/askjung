@@ -37,8 +37,6 @@ export default async function (req, res) {
 
 function generatePrompt(movieOne, movieTwo, movieThree, toBeExcluded) {
 
-  console.log("to be exluded: ", toBeExcluded)
-
   var numberOfMovies
 
   if (movieOne !== '' && movieTwo === '' && movieThree === '') numberOfMovies = 1
@@ -50,7 +48,7 @@ function generatePrompt(movieOne, movieTwo, movieThree, toBeExcluded) {
       return (
         `Suggest a movie that is just like this movie, 
         excluding movies directed by the director of this movie, 
-        with a rotten tomatoes score above 70
+        with a rotten tomatoes score above 40
     
         ${toBeExcluded.length === 0 ? '.' : 'and excluding the following:' + toBeExcluded + '.'}
     
@@ -70,7 +68,7 @@ function generatePrompt(movieOne, movieTwo, movieThree, toBeExcluded) {
       return (
         `Suggest a movie that is a mix of two other movies, 
         excluding movies directed by the directors of those same movies, 
-        with a rotten tomatoes score above 70
+        with a rotten tomatoes score above 40
   
         ${toBeExcluded.length === 0 ? '.' : 'and excluding the following:' + toBeExcluded + '.'}
   
@@ -94,7 +92,7 @@ function generatePrompt(movieOne, movieTwo, movieThree, toBeExcluded) {
       return (
         `Suggest a movie that is a mix of three other movies, 
           excluding movies directed by the directors of those same movies, 
-          with a rotten tomatoes score above 70
+          with a rotten tomatoes score above 40
     
           ${toBeExcluded.length === 0 ? '.' : 'and excluding the following:' + toBeExcluded + '.'}
     
