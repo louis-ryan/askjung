@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1042px" height="521px" viewBox="0 0 1042 521" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>Which2watch_title</title>
+    <defs>
+        <filter x="-19.5%" y="-72.4%" width="139.0%" height="244.8%" filterUnits="objectBoundingBox" id="filter-1">
+            <feGaussianBlur stdDeviation="49" in="SourceGraphic"></feGaussianBlur>
+        </filter>
+        <linearGradient x1="50%" y1="100%" x2="50%" y2="0%" id="linearGradient-2">
+            <stop stop-color="#000128" offset="0%"></stop>
+            <stop stop-color="#771021" offset="100%"></stop>
+        </linearGradient>
+        <filter x="-8.9%" y="-30.6%" width="116.9%" height="161.1%" filterUnits="objectBoundingBox" id="filter-3">
+            <feGaussianBlur stdDeviation="16" in="SourceGraphic"></feGaussianBlur>
+        </filter>
+        <filter x="-8.9%" y="-30.6%" width="116.9%" height="161.1%" filterUnits="objectBoundingBox" id="filter-4">
+            <feGaussianBlur stdDeviation="16" in="SourceGraphic"></feGaussianBlur>
+        </filter>
+        <filter x="-3.5%" y="-9.9%" width="106.1%" height="119.7%" filterUnits="objectBoundingBox" id="filter-5">
+            <feGaussianBlur stdDeviation="5" in="SourceGraphic"></feGaussianBlur>
+        </filter>
+        <filter x="-3.5%" y="-9.9%" width="106.1%" height="119.7%" filterUnits="objectBoundingBox" id="filter-6">
+            <feGaussianBlur stdDeviation="5" in="SourceGraphic"></feGaussianBlur>
+        </filter>
+        <linearGradient x1="0%" y1="50%" x2="100%" y2="50%" id="linearGradient-7">
+            <stop stop-color="#322C2C" offset="0%"></stop>
+            <stop stop-color="#D8D8D8" offset="100%"></stop>
+        </linearGradient>
+    </defs>
+    <g id="Which2watch_title" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <ellipse id="Oval" fill="#17009B" opacity="0.772053079" filter="url(#filter-1)" cx="522" cy="259.5" rx="377" ry="101.5"></ellipse>
+        <path d="M176,293 L773,293 L773,293 L784,285 L788,288 L773,298 L181.92381,298 C175.326222,298 169.966076,303.326114 169.924054,309.923568 L169,455 L169,455 L164,455 L164,305 C164,298.372583 169.372583,293 176,293 Z" id="Rectangle" fill="url(#linearGradient-2)"></path>
+        <g id="Group-Copy" transform="translate(231, 174)" font-family="BrushScriptMT, Brush Script MT" font-weight="normal">
+            <text id="Which2watch" opacity="0.267782772" filter="url(#filter-4)" font-size="128" letter-spacing="5.07936533" fill="#FFFFFF">
+                <tspan x="0" y="114">Which2watch</tspan>
+            </text>
+            <text id="Which2watch" opacity="0.830866556" font-size="122" letter-spacing="4.84127008" fill="#FFB2F7">
+                <tspan x="16" y="114">Which2watch</tspan>
+            </text>
+        </g>
+        <g id="Group" transform="translate(240, 178)" font-family="BrushScriptMT, Brush Script MT" font-weight="normal">
+            <text id="Which2watch" opacity="0.64916705" filter="url(#filter-6)" font-size="124" letter-spacing="4.92063517" fill="#F77BD5">
+                <tspan x="0" y="110">Which2watch</tspan>
+            </text>
+            <text id="Which2watch" font-size="120" letter-spacing="4.761905">
+                <tspan x="9" y="115" fill="#B1318E">W</tspan>
+                <tspan x="100.539249" y="115" fill="#F44EC7">h</tspan>
+                <tspan x="149.129279" y="115" fill="#B53893">i</tspan>
+                <tspan x="181.371652" y="115" fill="#F44EC7">ch</tspan>
+                <tspan x="269.76265" y="115" fill="#9F257E">2</tspan>
+                <tspan x="327.083149" y="115" fill="#F44EC7">wa</tspan>
+                <tspan x="444.12649" y="115" fill="#D877BD">t</tspan>
+                <tspan x="478.888395" y="115" fill="#F44EC7">c</tspan>
+                <tspan x="518.689363" y="115" fill="#A53686">h</tspan>
+            </text>
+        </g>
+        <circle id="Oval" stroke="#979797" fill="url(#linearGradient-7)" cx="173.5" cy="303.5" r="6"></circle>
+    </g>
+</svg>
