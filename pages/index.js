@@ -1,7 +1,6 @@
 import Head from "next/head";
 import { useState, useEffect } from "react";
 import MovieInput from "../components/MovieInput";
-import title from "../public/which2watch_title.svg";
 import superGenius from "../public/super_genius.svg";
 import superGeniusFrustrated from "../public/super_genius_frustrated.svg";
 import useCallTrailer from "../custom_hooks/useCallTrailer";
