@@ -1,7 +1,7 @@
 import Head from "next/head";
 import { useState, useEffect } from "react";
 import MovieInput from "../components/MovieInput";
-import whatToWatchPoster from "../public/background_logo.svg";
+import whatToWatchPoster from "../public/whatToWatchPoster.png";
 import superGenius from "../public/super_genius.svg";
 import superGeniusFrustrated from "../public/super_genius_frustrated.svg";
 import shelfLeft from "../public/shelf_L.png";
@@ -36,6 +36,15 @@ export default function Home() {
 
 
   useEffect(() => {
+    if (typeof window.adScriptLoaded === 'undefined') {
+      console.log("adblocker")
+    } else {
+      console.log("no adblocker")
+    }
+  }, []);
+
+
+  useEffect(() => {
     setTimeout(() => {
       setGreetingLine1("Welcome to the fortress of solitude...")
     }, 500)
@@ -53,17 +62,17 @@ export default function Home() {
   return (
     <div>
       <Head>
-        <title>Whattowatch???</title>
+        <title>Which2Watch</title>
         <link rel="icon" href="/Whattowatch_fav.png" />
       </Head>
 
       <main style={{ width: "100%", display: "flex", justifyContent: "center" }}>
         <div style={{ width: "600px", display: "flex", justifyContent: "center" }}>
 
-          <img src={shelfLeft.src} style={{position: "absolute", left: "0", height: "720px", opacity: "0.5"}}/>
+          <img src={shelfLeft.src} style={{ position: "absolute", left: "0", height: "720px", opacity: "0.5" }} />
 
-          <img src={whatToWatchPoster.src} style={{ position: "absolute", top: "-120px", width: "720px" }} />
-          <img src={view === 'THINKING' ? superGeniusFrustrated.src : superGenius.src} style={{ position: "absolute", width: "480px" }} />
+          <img src={whatToWatchPoster.src} style={{ position: "absolute", top: "-120px", maxWidth: "720px" }} />
+          <img src={view === 'THINKING' ? superGeniusFrustrated.src : superGenius.src} style={{ position: "absolute", maxWidth: "480px" }} />
 
           <div style={{ position: "absolute", width: "100vw", height: "100vh", top: "0", left: "0", zIndex: "1", display: "flex", justifyContent: "center", alignItems: "center" }}>
 
@@ -119,7 +128,7 @@ export default function Home() {
             )}
 
             {view === 'RESULTS' && (
-              <div style={{width: "600px"}}>
+              <div style={{ width: "600px" }}>
                 <p>for the films, {movieOneStr} {movieTwoStr && ', ' + movieTwoStr}, {movieThreeStr && ', ' + movieThreeStr}, the movie for you is:</p>
                 <h4>{result}</h4>
                 <div style={{ height: "8px" }} />
