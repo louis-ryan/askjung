@@ -69,7 +69,7 @@ export default function Home() {
 
           <img src="/shelf_L.png" style={{ position: "absolute", left: "0", height: "720px", opacity: "0.5" }} />
 
-          <img src={title.src} style={{ position: "absolute", top: "-120px", maxWidth: "720px" }} />
+          <img src="/which2watch_title.png" style={{ position: "absolute", top: "-120px", maxWidth: "720px" }} />
           <img src={view === 'THINKING' ? superGeniusFrustrated.src : superGenius.src} style={{ position: "absolute", maxWidth: "480px" }} />
 
           <div style={{ position: "absolute", width: "100vw", height: "100vh", top: "0", left: "0", zIndex: "1", display: "flex", justifyContent: "center", alignItems: "center" }}>
