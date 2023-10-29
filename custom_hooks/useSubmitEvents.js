@@ -1,7 +1,12 @@
-const useSubmitEvents = (movieOneStr, movieTwoStr, movieThreeStr, screenResult, toBeExcluded, setToBeExcluded, setView) => {
+const useSubmitEvents = (movieOneStr, movieTwoStr, movieThreeStr, screenResult, toBeExcluded, setToBeExcluded, setView, setError) => {
 
     async function onSubmit(event) {
         event.preventDefault();
+
+
+        if (!movieOneStr && !movieTwoStr && !movieThreeStr) { setError("You have not chosen any movies!"); return }
+        
+
         setView('THINKING')
         try {
             const response = await fetch("/api/generate", {

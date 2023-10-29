@@ -1,8 +1,6 @@
 import Head from "next/head";
 import { useState, useEffect } from "react";
 import MovieInput from "../components/MovieInput";
-import superGenius from "../public/super_genius.svg";
-import superGeniusFrustrated from "../public/super_genius_frustrated.svg";
 import useCallTrailer from "../custom_hooks/useCallTrailer";
 import useScreener from "../custom_hooks/useScreener";
 import useSubmitEvents from "../custom_hooks/useSubmitEvents";
@@ -14,8 +12,10 @@ export default function Home() {
   const [movieOne, directorOne, movieTwo, directorTwo, movieThree, directorThree, inputArr] = useInputArr()
 
   const [view, setView] = useState('INTRO')
+  const [error, setError] = useState("")
   const [screenDirector, setScreenDirector] = useState(false)
   const [youtubeID, setYoutubeID] = useState("")
+  const [thumbnail, setThumbnail] = useState("")
   const [result, setResult] = useState();
   const [toBeExcluded, setToBeExcluded] = useState([]);
 
@@ -27,9 +27,9 @@ export default function Home() {
   const movieTwoStr = movieTwo ? movieTwo + " directed by " + directorTwo : ''
   const movieThreeStr = movieThree ? movieThree + " directed by " + directorThree : ''
 
-  const { callTrailer } = useCallTrailer(setYoutubeID, setView)
+  const { callTrailer } = useCallTrailer(setYoutubeID, setThumbnail, setView)
   const { screenResult } = useScreener(movieOneStr, movieTwoStr, movieThreeStr, toBeExcluded, setResult, callTrailer, screenDirector, directorOne, directorTwo, directorThree)
-  const [onSubmit, onTryAgain] = useSubmitEvents(movieOneStr, movieTwoStr, movieThreeStr, screenResult, toBeExcluded, setToBeExcluded, setView)
+  const [onSubmit, onTryAgain] = useSubmitEvents(movieOneStr, movieTwoStr, movieThreeStr, screenResult, toBeExcluded, setToBeExcluded, setView, setError)
 
 
   useEffect(() => {
@@ -39,6 +39,15 @@ export default function Home() {
       console.log("no adblocker")
     }
   }, []);
+
+
+  useEffect(() => {
+    if (error) {
+      setTimeout(() => {
+        setError("")
+      }, 3000)
+    }
+  }, [error])
 
 
   useEffect(() => {
@@ -56,6 +65,14 @@ export default function Home() {
   }, [])
 
 
+  const handleGuyState = () => {
+    if (view === 'THINKING') { return "/super_genius_frustrated.svg" }
+    if (view === 'RESULTS') {return "/super_genius_holding.svg"}
+    if (error) { return "/super_genius_intense.svg" }
+    return "/super_genius.svg"
+  }
+
+
   return (
     <div>
       <Head>
@@ -67,9 +84,10 @@ export default function Home() {
         <div style={{ width: "600px", display: "flex", justifyContent: "center" }}>
 
           <img src="/shelf_L.png" style={{ position: "absolute", left: "0", height: "720px", opacity: "0.5" }} />
+          <img src="/shelf_R.png" style={{ position: "absolute", right: "0", height: "720px", opacity: "0.5" }} />
 
           <img src="/Which2watch_title.png" style={{ position: "absolute", top: "-120px", maxWidth: "720px" }} />
-          <img src={view === 'THINKING' ? superGeniusFrustrated.src : superGenius.src} style={{ position: "absolute", maxWidth: "480px" }} />
+          <img src={handleGuyState()} style={{ position: "absolute", maxWidth: "480px" }} />
 
           <div style={{ position: "absolute", width: "100vw", height: "100vh", top: "0", left: "0", zIndex: "1", display: "flex", justifyContent: "center", alignItems: "center" }}>
 
@@ -83,65 +101,73 @@ export default function Home() {
             )}
 
             {view === 'GENERATE' && (
+              <>
+                {error ? (
+                  <h3 style={{ padding: "24px", backgroundColor: "#000128" }}>{error}</h3>
+                ) : (
+                  <form onSubmit={onSubmit} style={{ backgroundColor: "#000128", width: "600px", padding: "24px", transform: "translateY(200px)" }} >
 
-              <form onSubmit={onSubmit} style={{ backgroundColor: "#000128", width: "600px", padding: "24px", transform: "translateY(200px)" }} >
+                    {inputArr.map((input) => {
+                      return (
+                        <div key={input.moviePlaceholder}>
+                          <MovieInput
+                            movieInputName={input.movieInputName}
+                            directorInputName={input.directorInputName}
+                            movie={input.movie}
+                            director={input.director}
+                            moviePlaceholder={input.moviePlaceholder}
+                            directorPlaceholder={input.directorPlaceholder}
+                            setMovie={input.setMovie}
+                            setDirector={input.setDirector}
+                          />
+                          <div style={{ height: "16px" }} />
+                        </div>
+                      )
+                    })}
 
-                {inputArr.map((input) => {
-                  return (
-                    <div key={input.moviePlaceholder}>
-                      <MovieInput
-                        movieInputName={input.movieInputName}
-                        directorInputName={input.directorInputName}
-                        movie={input.movie}
-                        director={input.director}
-                        moviePlaceholder={input.moviePlaceholder}
-                        directorPlaceholder={input.directorPlaceholder}
-                        setMovie={input.setMovie}
-                        setDirector={input.setDirector}
-                      />
-                      <div style={{ height: "16px" }} />
+                    <div style={{ display: "flex" }}>
+                      <input type="checkbox" onClick={() => { screenDirector === false ? setScreenDirector(true) : setScreenDirector(false) }} />
+                      <div style={{ width: "8px" }} />
+                      <p>Exclude movies from listed directors</p>
                     </div>
-                  )
-                })}
 
-                <div style={{ display: "flex" }}>
-                  <input type="checkbox" onClick={() => { screenDirector === false ? setScreenDirector(true) : setScreenDirector(false) }} />
-                  <div style={{ width: "8px" }} />
-                  <p>Exclude movies from listed directors</p>
-                </div>
-
-                <div style={{ height: "16px" }} />
-                <input
-                  type="submit"
-                  value="Tell me what to watch"
-                  style={{ width: "100%" }}
-                />
-              </form>
+                    <div style={{ height: "16px" }} />
+                    <input
+                      type="submit"
+                      value="Tell me what to watch"
+                      style={{ width: "100%" }}
+                    />
+                  </form>
+                )}
+              </>
 
             )}
 
             {view === 'THINKING' && (
-              <div>THINKING...</div>
+              <h3 style={{ padding: "24px", backgroundColor: "#000128" }}>I'm thinking ok...</h3>
             )}
 
             {view === 'RESULTS' && (
-              <div style={{ width: "600px" }}>
-                <p>for the films, {movieOneStr} {movieTwoStr && ', ' + movieTwoStr}, {movieThreeStr && ', ' + movieThreeStr}, the movie for you is:</p>
-                <h4>{result}</h4>
-                <div style={{ height: "8px" }} />
-                <iframe
+              <>
+                <img src={thumbnail} style={{ position: "absolute", width: "100px", top: "360px" }} />
+                <div style={{ width: "600px", padding: "24px", backgroundColor: "#000128", transform: "translateY(240px)" }}>
+                  <h3>The movie for you is:</h3>
+                  <h3>{result}</h3>
+                  <div style={{ height: "8px" }} />
+                  {/* <iframe
                   src={`https://www.youtube.com/embed/${youtubeID}`}
                   width={'600'}
                   height={'300'}
-                />
-                <div style={{ height: "16px" }} />
-                <button
-                  onClick={() => onTryAgain(result)}
-                  style={{ width: "100%" }}
-                >
-                  Try again
-                </button>
-              </div>
+                /> */}
+                  <div style={{ height: "16px" }} />
+                  <button
+                    onClick={() => onTryAgain(result)}
+                    style={{ width: "100%" }}
+                  >
+                    Try again
+                  </button>
+                </div>
+              </>
             )}
           </div>
 
