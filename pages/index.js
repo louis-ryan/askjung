@@ -11,6 +11,7 @@ export default function Home() {
 
   const [movieOne, directorOne, movieTwo, directorTwo, movieThree, directorThree, inputArr] = useInputArr()
 
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const [view, setView] = useState('INTRO')
   const [error, setError] = useState("")
   const [screenDirector, setScreenDirector] = useState(false)
@@ -28,8 +29,19 @@ export default function Home() {
   const movieThreeStr = movieThree ? movieThree + " directed by " + directorThree : ''
 
   const { callTrailer } = useCallTrailer(setYoutubeID, setThumbnail, setView)
-  const { screenResult } = useScreener(movieOneStr, movieTwoStr, movieThreeStr, toBeExcluded, setResult, callTrailer, screenDirector, directorOne, directorTwo, directorThree)
+  const { screenResult } = useScreener(movieOneStr, movieTwoStr, movieThreeStr, toBeExcluded, setResult, setView, callTrailer, screenDirector, directorOne, directorTwo, directorThree)
   const [onSubmit, onTryAgain] = useSubmitEvents(movieOneStr, movieTwoStr, movieThreeStr, screenResult, toBeExcluded, setToBeExcluded, setView, setError)
+
+
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
 
 
   useEffect(() => {
@@ -67,7 +79,7 @@ export default function Home() {
 
   const handleGuyState = () => {
     if (view === 'THINKING') { return "/super_genius_frustrated.svg" }
-    if (view === 'RESULTS') {return "/super_genius_holding.svg"}
+    // if (view === 'RESULTS') {return "/super_genius_holding.svg"}
     if (error) { return "/super_genius_intense.svg" }
     return "/super_genius.svg"
   }
@@ -78,16 +90,21 @@ export default function Home() {
       <Head>
         <title>Which2Watch</title>
         <link rel="icon" href="/Whattowatch_fav.png" />
+        <meta name="google-adsense-account" content="ca-pub-3617960560151760"></meta>
       </Head>
 
       <main style={{ width: "100%", display: "flex", justifyContent: "center" }}>
-        <div style={{ width: "600px", display: "flex", justifyContent: "center" }}>
+        <div style={{ maxWidth: "600px", display: "flex", justifyContent: "center" }}>
 
-          <img src="/shelf_L.png" style={{ position: "absolute", left: "0", height: "720px", opacity: "0.5" }} />
-          <img src="/shelf_R.png" style={{ position: "absolute", right: "0", height: "720px", opacity: "0.5" }} />
+          {windowWidth > 600 && (
+            <>
+              <img src="/shelf_L.png" style={{ position: "absolute", left: "0", height: "720px", opacity: "0.5" }} />
+              <img src="/shelf_R.png" style={{ position: "absolute", right: "0", height: "720px", opacity: "0.5" }} />
+            </>
+          )}
 
-          <img src="/Which2watch_title.png" style={{ position: "absolute", top: "-120px", maxWidth: "720px" }} />
-          <img src={handleGuyState()} style={{ position: "absolute", maxWidth: "480px" }} />
+          <img src="/Which2watch_title.png" style={{ position: "absolute", top: windowWidth > 600 && "-120px", width: windowWidth > 600 ? "720px" : "100%" }} />
+          <img src={handleGuyState()} style={{ position: "absolute", width: windowWidth > 600 ? "480px" : "80%", top: windowWidth < 600 && "80px" }} />
 
           <div style={{ position: "absolute", width: "100vw", height: "100vh", top: "0", left: "0", zIndex: "1", display: "flex", justifyContent: "center", alignItems: "center" }}>
 
@@ -149,7 +166,7 @@ export default function Home() {
 
             {view === 'RESULTS' && (
               <>
-                <img src={thumbnail} style={{ position: "absolute", width: "100px", top: "360px" }} />
+                {/* <img src={thumbnail} style={{ position: "absolute", width: "100px", top: "360px" }} /> */}
                 <div style={{ width: "600px", padding: "24px", backgroundColor: "#000128", transform: "translateY(240px)" }}>
                   <h3>The movie for you is:</h3>
                   <h3>{result}</h3>

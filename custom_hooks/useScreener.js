@@ -1,4 +1,4 @@
-const useScreener = (movieOneStr, movieTwoStr, movieThreeStr, toBeExcluded, setResult, callTrailer, screenDirector, directorOne, directorTwo, directorThree) => {
+const useScreener = (movieOneStr, movieTwoStr, movieThreeStr, toBeExcluded, setResult, setView, callTrailer, screenDirector, directorOne, directorTwo, directorThree) => {
 
     async function callForScreener() {
         try {
@@ -56,8 +56,10 @@ const useScreener = (movieOneStr, movieTwoStr, movieThreeStr, toBeExcluded, setR
         if (sameDirectorAsSearch) {
             callForScreener()
         } else {
+            console.log("set result")
             setResult(resultStr);
-            callTrailer(movieStr);
+            // callTrailer(movieStr);
+            setView('RESULTS')
         }
     }
 

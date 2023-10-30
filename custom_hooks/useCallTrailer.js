@@ -13,7 +13,7 @@ const useCallTrailer = (setYoutubeID, setThumbnail, setView) => {
 
             setYoutubeID(idFromSearch)
             setThumbnail(thumbnail)
-            setView('RESULTS')
+            // setView('RESULTS')
 
         } catch (error) {
             console.error(error);
