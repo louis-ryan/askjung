@@ -11,7 +11,7 @@ export default function Home() {
 
   const [movieOne, directorOne, movieTwo, directorTwo, movieThree, directorThree, inputArr] = useInputArr()
 
-  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  const [windowWidth, setWindowWidth] = useState(1200);
   const [view, setView] = useState('INTRO')
   const [error, setError] = useState("")
   const [screenDirector, setScreenDirector] = useState(false)
@@ -33,24 +33,16 @@ export default function Home() {
   const [onSubmit, onTryAgain] = useSubmitEvents(movieOneStr, movieTwoStr, movieThreeStr, screenResult, toBeExcluded, setToBeExcluded, setView, setError)
 
 
-  useEffect(() => {
-    const handleResize = () => {
-      setWindowWidth(window.innerWidth);
-    };
-    window.addEventListener('resize', handleResize);
-    return () => {
-      window.removeEventListener('resize', handleResize);
-    };
-  }, []);
-
-
-  useEffect(() => {
-    if (typeof window.adScriptLoaded === 'undefined') {
-      console.log("adblocker")
-    } else {
-      console.log("no adblocker")
-    }
-  }, []);
+  // useEffect(() => {
+  //   if (window === 'undefined') return
+  //   const handleResize = () => {
+  //     setWindowWidth(window.innerWidth);
+  //   };
+  //   window.addEventListener('resize', handleResize);
+  //   return () => {
+  //     window.removeEventListener('resize', handleResize);
+  //   };
+  // }, []);
 
 
   useEffect(() => {
