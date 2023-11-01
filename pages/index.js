@@ -82,7 +82,6 @@ export default function Home() {
       <Head>
         <title>Which2Watch</title>
         <link rel="icon" href="/Whattowatch_fav.png" />
-        <meta name="google-adsense-account" content="ca-pub-3617960560151760"></meta>
       </Head>
 
       <main style={{ width: "100%", display: "flex", justifyContent: "center" }}>
