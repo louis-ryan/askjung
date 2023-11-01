@@ -87,6 +87,8 @@ export default function Home() {
       <main style={{ width: "100%", display: "flex", justifyContent: "center" }}>
         <div style={{ maxWidth: "600px", display: "flex", justifyContent: "center" }}>
 
+          <a href="/privacy" target="_blank" style={{ position: "absolute", right: "320px", top: "52px", zIndex: "4" }}>{"Privacy policy"}</a>
+
           {windowWidth > 600 && (
             <>
               <img src="/shelf_L.png" style={{ position: "absolute", left: "0", height: "720px", opacity: "0.5" }} />
