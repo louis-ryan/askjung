@@ -46,6 +46,15 @@ export default function Home() {
 
 
   useEffect(() => {
+    try {
+      (window.adsbygoogle = window.adsbygoogle || []).push({});
+    } catch (err) {
+      console.error(err);
+    }
+  }, []);
+
+
+  useEffect(() => {
     if (error) {
       setTimeout(() => {
         setError("")
@@ -96,8 +105,8 @@ export default function Home() {
             </>
           )}
 
-          <img src="/Which2watch_title.png" style={{ position: "absolute", top: windowWidth > 600 && "-120px", width: windowWidth > 600 ? "720px" : "100%" }} />
-          <img src={handleGuyState()} style={{ position: "absolute", width: windowWidth > 600 ? "480px" : "80%", top: windowWidth < 600 && "80px" }} />
+          <img src="/Which2watch_title.png" style={{ position: "absolute", top: windowWidth > 600 ? "-120px" : "0px", width: windowWidth > 600 ? "720px" : "100%" }} />
+          <img src={handleGuyState()} style={{ position: "absolute", width: windowWidth > 600 ? "480px" : "80%", top: windowWidth < 600 ? "80px" : "0px" }} />
 
           <div style={{ position: "absolute", width: "100vw", height: "100vh", top: "0", left: "0", zIndex: "1", display: "flex", justifyContent: "center", alignItems: "center" }}>
 
@@ -112,6 +121,18 @@ export default function Home() {
 
             {view === 'GENERATE' && (
               <>
+                <div style={{ position: "absolute", left: "24px", zIndex: "4", width: "300px", height: "600px", backgroundColor: "white" }} >
+                  <ins
+                    className="adsbygoogle"
+                    style={{ display: "block" }}
+                    data-ad-client="ca-pub-3617960560151760"
+                    data-ad-slot="7769562854"
+                    data-ad-format="auto"
+                    data-full-width-responsive="true"
+                  >
+                  </ins>
+                </div>
+
                 {error ? (
                   <h3 style={{ padding: "24px", backgroundColor: "#000128" }}>{error}</h3>
                 ) : (
