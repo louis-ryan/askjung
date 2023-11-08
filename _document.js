@@ -10,7 +10,6 @@ class MyDocument extends Document {
                         src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3617960560151760"
                         crossorigin="anonymous"
                     >
-
                     </script>
                 </Head>
                 <body>

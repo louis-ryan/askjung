@@ -1,6 +1,7 @@
 import Head from "next/head";
 import { useState, useEffect } from "react";
 import MovieInput from "../components/MovieInput";
+import GoogleAd from "../components/GoogleAd";
 import useCallTrailer from "../custom_hooks/useCallTrailer";
 import useScreener from "../custom_hooks/useScreener";
 import useSubmitEvents from "../custom_hooks/useSubmitEvents";
@@ -122,15 +123,7 @@ export default function Home() {
             {view === 'GENERATE' && (
               <>
                 <div style={{ position: "absolute", left: "24px", zIndex: "4", width: "300px", height: "600px", backgroundColor: "white" }} >
-                  <ins
-                    className="adsbygoogle"
-                    style={{ display: "block" }}
-                    data-ad-client="ca-pub-3617960560151760"
-                    data-ad-slot="7769562854"
-                    data-ad-format="auto"
-                    data-full-width-responsive="true"
-                  >
-                  </ins>
+                  <GoogleAd />
                 </div>
 
                 {error ? (
