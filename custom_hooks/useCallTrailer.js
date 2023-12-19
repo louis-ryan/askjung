@@ -1,4 +1,4 @@
-const useCallTrailer = (setYoutubeID, setThumbnail, setView) => {
+const useCallTrailer = (setYoutubeID) => {
 
     async function callTrailer(query) {
 
@@ -9,14 +9,11 @@ const useCallTrailer = (setYoutubeID, setThumbnail, setView) => {
             if (response.status !== 200) { throw data.error || new Error(`Request failed with status ${response.status}`) }
 
             const idFromSearch = data.items[0].id.videoId
-            const thumbnail = data.items[0].snippet.thumbnails.high.url
 
             setYoutubeID(idFromSearch)
-            setThumbnail(thumbnail)
-            // setView('RESULTS')
 
         } catch (error) {
-            console.error(error);
+            console.error("trailer error: ", error);
         }
     }
 

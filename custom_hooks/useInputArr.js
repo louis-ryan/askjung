@@ -13,7 +13,7 @@ const useInputArr = () => {
             movie: movieOne,
             director: directorOne,
             moviePlaceholder: "First Movie",
-            directorPlaceholder: "Directed by...",
+            directorPlaceholder: "Director (if required)",
             setMovie: setMovieOne,
             setDirector: setDirectorOne
         },
@@ -23,7 +23,7 @@ const useInputArr = () => {
             movie: movieTwo,
             director: directorTwo,
             moviePlaceholder: "Second Movie",
-            directorPlaceholder: "Directed by...",
+            directorPlaceholder: "Director (if required)",
             setMovie: setMovieTwo,
             setDirector: setDirectorTwo
         },
@@ -33,7 +33,7 @@ const useInputArr = () => {
             movie: movieThree,
             director: directorThree,
             moviePlaceholder: "Third Movie",
-            directorPlaceholder: "Directed by...",
+            directorPlaceholder: "Director (if required)",
             setMovie: setMovieThree,
             setDirector: setDirectorThree
         }

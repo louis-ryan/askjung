@@ -9,13 +9,15 @@ export default async function (req, res) {
   const movieTwo = req.body.movieTwo || '';
   const movieThree = req.body.movieThree || '';
   const toBeExcluded = req.body.toBeExcluded || '';
+  const theLoveList = req.body.theLoveList || '';
+  const theHateList = req.body.theHateList || '';
 
-  console.log("prompt: ", generatePrompt(movieOne, movieTwo, movieThree, toBeExcluded))
+  console.log("prompt: ", generatePrompt(movieOne, movieTwo, movieThree, toBeExcluded, theLoveList, theHateList))
 
   try {
     const completion = await openai.createCompletion({
       model: "text-davinci-003",
-      prompt: generatePrompt(movieOne, movieTwo, movieThree, toBeExcluded),
+      prompt: generatePrompt(movieOne, movieTwo, movieThree, toBeExcluded, theLoveList, theHateList),
       temperature: 0.6,
     });
     res.status(200).json({ result: completion.data.choices[0].text });
@@ -35,7 +37,7 @@ export default async function (req, res) {
   }
 }
 
-function generatePrompt(movieOne, movieTwo, movieThree, toBeExcluded) {
+function generatePrompt(movieOne, movieTwo, movieThree, toBeExcluded, theLoveList, theHateList) {
 
   var numberOfMovies
 
@@ -51,6 +53,10 @@ function generatePrompt(movieOne, movieTwo, movieThree, toBeExcluded) {
         with a rotten tomatoes score above 40
     
         ${toBeExcluded.length === 0 ? '.' : 'and excluding the following:' + toBeExcluded + '.'}
+
+        ${theLoveList.length > 0 ? 'some movies to guide you towards my suggestion are: ' + theLoveList + '.' : ''}
+
+        ${theHateList.length > 0 ? 'some movies that I do no want the suggestion to be like are: ' + theHateList + '.' : ''}
     
         Other Movie 1: Blade Runner directed by Ridley Scott
         Suggestion: Ex Machina; 2014; Alex Garland
@@ -71,6 +77,10 @@ function generatePrompt(movieOne, movieTwo, movieThree, toBeExcluded) {
         with a rotten tomatoes score above 40
   
         ${toBeExcluded.length === 0 ? '.' : 'and excluding the following:' + toBeExcluded + '.'}
+
+        ${theLoveList.length > 0 ? 'some movies to guide you towards my suggestion are: ' + theLoveList + '.' : ''}
+
+        ${theHateList.length > 0 ? 'some movies that I do no want the suggestion to be like are: ' + theHateList + '.' : ''}
   
         Other Movie 1: Blade Runner directed by Ridley Scott
         Other Movie 2: Her directed by Spike Jonze
@@ -94,7 +104,11 @@ function generatePrompt(movieOne, movieTwo, movieThree, toBeExcluded) {
           excluding movies directed by the directors of those same movies, 
           with a rotten tomatoes score above 40
     
-          ${toBeExcluded.length === 0 ? '.' : 'and excluding the following:' + toBeExcluded + '.'}
+          ${toBeExcluded.length === 0 ? '' : 'and excluding the following:' + toBeExcluded + '.'}
+
+          ${theLoveList.length > 0 ? 'some movies to guide you towards my suggestion are: ' + theLoveList + '.' : ''}
+
+          ${theHateList.length > 0 ? 'some movies that I do no want the suggestion to be like are: ' + theHateList + '.' : ''}
     
           Other Movie 1: Blade Runner directed by Ridley Scott
           Other Movie 2: Her directed by Spike Jonze

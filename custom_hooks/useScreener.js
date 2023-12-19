@@ -8,9 +8,9 @@ const useScreener = (movieOneStr, movieTwoStr, movieThreeStr, toBeExcluded, setR
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
-                    movieOne: movieOneStr,
-                    movieTwo: movieTwoStr,
-                    movieThree: movieThreeStr,
+                    movieOne: movieOneStr(),
+                    movieTwo: movieTwoStr(),
+                    movieThree: movieThreeStr(),
                     toBeExcluded: toBeExcluded
                 }),
             });
@@ -47,7 +47,9 @@ const useScreener = (movieOneStr, movieTwoStr, movieThreeStr, toBeExcluded, setR
 
         if (screenDirector === false) {
             setResult(resultStr);
-            callTrailer(movieStr);
+
+            // callTrailer(movieStr);
+            setView('RESULTS')
             return
         }
 
@@ -56,7 +58,7 @@ const useScreener = (movieOneStr, movieTwoStr, movieThreeStr, toBeExcluded, setR
         if (sameDirectorAsSearch) {
             callForScreener()
         } else {
-            console.log("set result")
+
             setResult(resultStr);
             // callTrailer(movieStr);
             setView('RESULTS')
