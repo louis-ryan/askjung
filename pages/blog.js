@@ -50,7 +50,7 @@ const Blog = () => (
 
 
         <div style={{ display: "flex", justifyContent: "center" }}>
-            <div style={{ maxWidth: "800px", margin: "120px 0px", lineHeight: "2" }}>
+            <div style={{ maxWidth: "600px", margin: "120px 0px", lineHeight: "2" }}>
 
                 <img src="/Which2watch_title.svg" style={{ width: "100%", marginTop: "-160px" }} />
 
@@ -66,12 +66,12 @@ const Blog = () => (
                                 <img style={{ width: "240px" }} src={entry.imgUrl}></img>
                             </div>
 
-                            <div style={{ height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-                                <h2>{`${entry.name} (${entry.year})`}</h2>
+                            <div style={{ height: "100%", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+                                <h3>{`${entry.name} (${entry.year})`}</h3>
                                 <h3>{`Directed by ${entry.director}`}</h3>
                                 <div>{entry.blurb}</div>
                                 <a href={entry.link} target="_blank">
-                                    <button>{"Watch it here!"}</button>
+                                    <h3>{"Watch it here!"}</h3>
                                 </a>
                             </div>
                         </div>

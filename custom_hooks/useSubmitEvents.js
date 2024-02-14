@@ -2,13 +2,11 @@ const useSubmitEvents = (movieOneStr, movieTwoStr, movieThreeStr, screenResult, 
 
 
 
-
-
     async function onSubmit(event) {
         event.preventDefault();
 
 
-        if (!movieOneStr && !movieTwoStr && !movieThreeStr) { setError("You have not chosen any movies!"); return }
+        if (!movieOneStr() && !movieTwoStr() && !movieThreeStr()) { setError("You have not chosen any movies!"); return }
 
 
         setView('THINKING')

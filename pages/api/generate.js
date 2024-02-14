@@ -16,7 +16,7 @@ export default async function (req, res) {
 
   try {
     const completion = await openai.createCompletion({
-      model: "text-davinci-003",
+      model: "gpt-3.5-turbo-instruct",
       prompt: generatePrompt(movieOne, movieTwo, movieThree, toBeExcluded, theLoveList, theHateList),
       temperature: 0.6,
     });
@@ -66,6 +66,9 @@ function generatePrompt(movieOne, movieTwo, movieThree, toBeExcluded, theLoveLis
     
         Other Movie 1: Casino directed by Martin Scorsese
         Suggestion: Magnolia; 1999; Paul Thomas Anderson
+
+        Other Movie 1: 12 Angry Men directed by Sidney Lumet
+        Suggestion: Rear Window; 1954; Alfred Hitchcock
     
         Other Movie 1: ${movieOne}
         Suggestion:`
@@ -93,6 +96,10 @@ function generatePrompt(movieOne, movieTwo, movieThree, toBeExcluded, theLoveLis
         Other Movie 1: Casino directed by Martin Scorsese
         Other Movie 2: Moonrise Kingdom directed by Wes Anderson
         Suggestion: Magnolia; 1999; Paul Thomas Anderson
+
+        Other Movie 1: Mulholland Drive directed by David Lynch
+        Other Movie 2: 12 Angry Men directed by Sidney Lumet
+        Suggestion: Rear Window; 1954; Alfred Hitchcock
     
         Other Movie 1: ${movieOne}
         Other Movie 2: ${movieTwo}
@@ -124,6 +131,11 @@ function generatePrompt(movieOne, movieTwo, movieThree, toBeExcluded, theLoveLis
           Other Movie 2: Moonrise Kingdom directed by Wes Anderson
           Other Movie 3: Heat directed by Michael Mann
           Suggestion: Magnolia; 1999; Paul Thomas Anderson
+
+          Other Movie 1: Mulholland Drive directed by David Lynch
+          Other Movie 2: Carnage directed by Roman Polanski
+          Other Movie 3: 12 Angry Men directed by Sidney Lumet
+          Suggestion: Rear Window; 1954; Alfred Hitchcock
       
           Other Movie 1: ${movieOne}
           Other Movie 2: ${movieTwo}

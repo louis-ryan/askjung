@@ -173,7 +173,7 @@ export default function Home() {
               </>
             )}
 
-            {windowWidth > 1200 && (
+            {/* {windowWidth > 1200 && (
               <>
                 <a href="https://www.amazon.com/gp/search?ie=UTF8&tag=which2watch-20&linkCode=ur2&linkId=fd770807defac209763be34eb4467994&camp=1789&creative=9325&index=aps&keywords=prime video" target="_blank">
                   <img className="banner_ad" src={primeBanner} style={{ position: "absolute", zIndex: "2", left: "80px", bottom: "160px", height: "400px" }} />
@@ -183,7 +183,7 @@ export default function Home() {
                   <img className="banner_ad" src={mubiBanner} style={{ position: "absolute", zIndex: "2", right: "80px", bottom: "160px", height: "400px" }} />
                 </a>
               </>
-            )}
+            )} */}
 
 
 
@@ -196,18 +196,18 @@ export default function Home() {
             {windowWidth > 720 && (
               <>
                 <img src="/Which2watch_title.svg" style={{ position: "absolute", top: "-80px", width: "800px" }} />
+
                 {openTrailer ? (
                   <iframe
                     className="the_guy"
                     src={`https://www.youtube.com/embed/${youtubeID}?autoplay=1&modestbranding=1`}
                     width={'600'}
-                    height={'280'}
+                    height={'320'}
                     style={{ position: "absolute", transform: "translateY(180px)" }}
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   />
                 ) : (
                   <>
-
                     <img className="the_guy" src={handleGuyState()} style={{ position: "absolute", width: windowWidth > 600 ? "480px" : "80%" }} />
                   </>
                 )}
@@ -284,8 +284,13 @@ export default function Home() {
 
                 <div style={{ position: "absolute", bottom: "40px", width: "600px", padding: "8px", backgroundColor: "rgb(33, 34, 35)" }}>
 
-                  <h3>The movie for you is:</h3>
-                  <h3>{result}</h3>
+                  {!openTrailer && (
+                    <>
+                      <h3>The movie for you is:</h3>
+                      <h3>{result}</h3>
+                    </>
+                  )}
+
                   <a href="https://www.amazon.com/gp/search?ie=UTF8&tag=which2watch-20&linkCode=ur2&linkId=dc4abe79d5103c50924fb71aa3b8c2bc&camp=1789&creative=9325&index=instant-video&keywords=12 Angry Men 1957 Sidney Lumet rent" target="_blank">
                     <h3>{"WATCH IT HERE"}</h3>
                   </a>
