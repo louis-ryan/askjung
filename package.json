@@ -8,9 +8,6 @@
     "start": "next start",
     "cypress": "cypress open"
   },
-  "engines": {
-    "node": "v17.8.0"
-  },
   "dependencies": {
     "@testing-library/cypress": "^9.0.0",
     "assemblyai": "^4.3.2",
