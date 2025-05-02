@@ -92,6 +92,8 @@ export default function Home() {
       setIsLoading(true);
       setCurrentSprite("jung_inhale.png");
       setIsTransitioning(true);
+      
+      let fullResponse = '';
       const response = await fetch("/api/generate", {
         method: "POST",
         headers: {
@@ -102,19 +104,43 @@ export default function Home() {
           conversationHistory: conversationHistory
         }),
       });
-      const data = await response.json();
-      const newResponse = data.result.choices[0].text;
 
-      setAnalysis(newResponse);
-      setConversationHistory([...conversationHistory, { dream, response: newResponse }]);
+      if (!response.ok) {
+        throw new Error(`Request failed with status ${response.status}`);
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n').filter(line => line.trim() !== '');
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              if (data.text) {
+                fullResponse += data.text;
+                setCurrentMessage(fullResponse);
+              }
+            } catch (error) {
+              console.error('Error parsing chunk:', error);
+            }
+          }
+        }
+      }
+
+      setAnalysis(fullResponse);
+      setConversationHistory([...conversationHistory, { dream, response: fullResponse }]);
       setConversationStep(conversationStep + 1);
       setDream('');
 
-      handleSpeech(newResponse);
+      handleSpeech(fullResponse);
 
-      if (response.status !== 200) {
-        throw data.error || new Error(`Request failed with status ${response.status}`);
-      }
     } catch (error) {
       console.error("on submit err: ", error);
       setCurrentSprite("jung_neutral.png");

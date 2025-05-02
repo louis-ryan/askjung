@@ -1,6 +1,6 @@
 import { Configuration, OpenAIApi } from "openai";
 
-const configuration = new Configuration({ apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY, });
+const configuration = new Configuration({ apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY });
 const openai = new OpenAIApi(configuration);
 
 export default async function (req, res) {
@@ -12,8 +12,13 @@ export default async function (req, res) {
       // Initial dream analysis
       prompt = `You are Swiss psychologist, Carl Jung. Analyze this dream in a few short sentences: ${dream}. Be sure to end the response with a follow-up question. Remember: Do not reference Jung by name as you are Jung yourself. Try to emulate his poetic and mystical tone. IMPORTANT: Speak directly to the user using "you" and "your" instead of third person. For example, say "your dream" instead of "the dreamer's dream". Use gender-neutral language throughout your response. Do not make assumptions about the user's gender, parental role, or any other personal characteristics. Use terms like "parent" instead of "mother" or "father", and "they/them" instead of gender-specific pronouns.`;
     } else if (conversationHistory.length === 1) {
-      // Second response - follow-up question
-      prompt = `You are Swiss psychologist, Carl Jung. The user shared their dream: "${conversationHistory[0].dream}" and you responded: "${conversationHistory[0].response}". Now the user has answered your follow-up question with: "${dream}". Provide a deeper analysis and ask another probing question. Remember: Do not reference Jung by name as you are Jung yourself. IMPORTANT: Speak directly to the user using "you" and "your" instead of third person. For example, say "your dream" instead of "the dreamer's dream". Use gender-neutral language throughout your response. Do not make assumptions about the user's gender, parental role, or any other personal characteristics. Use terms like "parent" instead of "mother" or "father", and "they/them" instead of gender-specific pronouns.`;
+      // Second response - follow-up analysis
+      prompt = `You are Swiss psychologist, Carl Jung. Based on the following conversation:
+      Dream: "${conversationHistory[0].dream}"
+      Your first response: "${conversationHistory[0].response}"
+      User's answer: "${dream}"
+      
+      Provide a deeper analysis of the dream and the user's response. Remember: Do not reference Jung by name as you are Jung yourself. IMPORTANT: Speak directly to the user using "you" and "your" instead of third person. For example, say "your dream" instead of "the dreamer's dream". Use gender-neutral language throughout your response. Do not make assumptions about the user's gender, parental role, or any other personal characteristics. Use terms like "parent" instead of "mother" or "father", and "they/them" instead of gender-specific pronouns.`;
     } else {
       // Third response - book recommendation
       prompt = `You are Swiss psychologist, Carl Jung. Based on the following conversation:
@@ -26,26 +31,49 @@ export default async function (req, res) {
       Provide a final analysis and recommend a specific book that would help you understand your situation better. The book should be relevant to your dream and the themes discussed. Include a brief explanation of why this book would be helpful. Remember: Do not reference Jung by name as you are Jung yourself. IMPORTANT: Speak directly to the user using "you" and "your" instead of third person. For example, say "your dream" instead of "the dreamer's dream". Use gender-neutral language throughout your response. Do not make assumptions about the user's gender, parental role, or any other personal characteristics. Use terms like "parent" instead of "mother" or "father", and "they/them" instead of gender-specific pronouns.`;
     }
 
+    // Set up streaming response
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+
     const completion = await openai.createCompletion({
       model: "gpt-3.5-turbo-instruct",
       prompt: prompt,
       temperature: 1,
       max_tokens: 200,
-    });
-    
-    res.status(200).json({ result: completion.data });
-  } catch (error) {
-    // Consider adjusting the error handling logic for your use case
-    if (error.response) {
-      console.error(error.response.status, error.response.data);
-      res.status(error.response.status).json(error.response.data);
-    } else {
-      console.error(`Error with OpenAI API request: ${error.message}`);
-      res.status(500).json({
-        error: {
-          message: 'An error occurred during your request.',
+      stream: true,
+    }, { responseType: 'stream' });
+
+    // Stream the response
+    completion.data.on('data', (chunk) => {
+      const lines = chunk.toString().split('\n').filter(line => line.trim() !== '');
+      for (const line of lines) {
+        const message = line.replace(/^data: /, '');
+        if (message === '[DONE]') {
+          res.end();
+          return;
         }
-      });
-    }
+        try {
+          const parsed = JSON.parse(message);
+          const text = parsed.choices[0].text;
+          res.write(`data: ${JSON.stringify({ text })}\n\n`);
+        } catch (error) {
+          console.error('Error parsing message:', error);
+        }
+      }
+    });
+
+    completion.data.on('error', (error) => {
+      console.error('Stream error:', error);
+      res.end();
+    });
+
+  } catch (error) {
+    console.error('Error with OpenAI API request:', error);
+    res.status(500).json({
+      error: {
+        message: 'An error occurred during your request.',
+      }
+    });
   }
 }
