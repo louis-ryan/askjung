@@ -192,101 +192,123 @@ export default function Home() {
     setIsJungSpeaking(true);
     setIsTransitioning(false);
     setCurrentMessage(data);
-    const response = await fetch('/api/speech', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: data }),
-    });
 
-    if (response.ok) {
-      const audioData = await response.arrayBuffer();
+    try {
+      // Create audio context if it doesn't exist
+      if (!audioContextRef.current) {
+        audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+      }
 
-      try {
-        // Create audio context if it doesn't exist
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      // Resume audio context if it's suspended (required for mobile)
+      if (audioContextRef.current.state === 'suspended') {
+        await audioContextRef.current.resume();
+      }
 
-        // Resume audio context if it's suspended (required for mobile)
-        if (audioCtx.state === 'suspended') {
-          await audioCtx.resume();
-        }
+      // Start the mouth animation
+      animationRef.current = setInterval(() => {
+        setCurrentSprite(prev => prev === "jung_neutral.png" ? "jung_open_mouth.png" : "jung_neutral.png");
+      }, 300);
 
-        // Start the mouth animation
-        animationRef.current = setInterval(() => {
-          setCurrentSprite(prev => prev === "jung_neutral.png" ? "jung_open_mouth.png" : "jung_neutral.png");
-        }, 300);
+      // Fetch audio data
+      const response = await fetch('/api/speech', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: data }),
+      });
 
-        const buffer = await audioCtx.decodeAudioData(audioData);
-        const source = audioCtx.createBufferSource();
-        source.buffer = buffer;
-        source.playbackRate.value = 0.75;
-        source.connect(audioCtx.destination);
+      if (!response.ok) {
+        throw new Error('Failed to generate speech');
+      }
 
-        // Set playing state immediately before starting
-        setIsAudioPlaying(true);
-        console.log("Audio playing state set to true");
+      // Stream the audio data
+      const reader = response.body.getReader();
+      const chunks = [];
+      let totalLength = 0;
 
-        // Start auto-scroll after a short delay to allow content to render
-        setTimeout(() => {
-          if (scrollContainerRef.current) {
-            const container = scrollContainerRef.current;
-            const contentHeight = container.scrollHeight;
-            const containerHeight = container.clientHeight;
-            const scrollDistance = contentHeight - containerHeight;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        chunks.push(value);
+        totalLength += value.length;
+      }
+
+      // Concatenate chunks into a single Uint8Array
+      const audioData = new Uint8Array(totalLength);
+      let position = 0;
+      for (const chunk of chunks) {
+        audioData.set(chunk, position);
+        position += chunk.length;
+      }
+
+      // Decode audio data in a separate task to prevent blocking
+      const buffer = await audioContextRef.current.decodeAudioData(audioData.buffer);
+      
+      // Create and configure audio source
+      const source = audioContextRef.current.createBufferSource();
+      source.buffer = buffer;
+      source.playbackRate.value = 0.75;
+      source.connect(audioContextRef.current.destination);
+
+      // Set playing state
+      setIsAudioPlaying(true);
+      console.log("Audio playing state set to true");
+
+      // Start auto-scroll after a short delay
+      setTimeout(() => {
+        if (scrollContainerRef.current) {
+          const container = scrollContainerRef.current;
+          const contentHeight = container.scrollHeight;
+          const containerHeight = container.clientHeight;
+          const scrollDistance = contentHeight - containerHeight;
+          
+          if (scrollDistance > 0) {
+            const startTime = performance.now();
+            const baseDuration = 20000; // 20 seconds
+            const additionalDuration = Math.floor(scrollDistance / 100) * 2000;
+            const duration = baseDuration + additionalDuration;
             
-            if (scrollDistance > 0) {
-              const startTime = performance.now();
-              // Base duration of 20 seconds for medium length text (about 200px scroll)
-              // Add 2 seconds for every additional 100px of scroll
-              const baseDuration = 20000; // 20 seconds
-              const additionalDuration = Math.floor(scrollDistance / 100) * 2000; // 2 seconds per 100px
-              const duration = baseDuration + additionalDuration;
+            const animateScroll = (currentTime) => {
+              const elapsed = currentTime - startTime;
+              const progress = Math.min(elapsed / duration, 1);
+              const currentScroll = progress * scrollDistance;
+              container.scrollTop = currentScroll;
               
-              const animateScroll = (currentTime) => {
-                const elapsed = currentTime - startTime;
-                const progress = Math.min(elapsed / duration, 1);
-                const currentScroll = progress * scrollDistance;
-                container.scrollTop = currentScroll;
-                
-                if (progress < 1) {
-                  requestAnimationFrame(animateScroll);
-                }
-              };
-              
-              requestAnimationFrame(animateScroll);
-            }
+              if (progress < 1) {
+                requestAnimationFrame(animateScroll);
+              }
+            };
+            
+            requestAnimationFrame(animateScroll);
           }
-        }, 500);
+        }
+      }, 500);
 
-        source.onended = function () {
-          console.log("Audio ended");
-          // Stop the animation when audio ends
-          if (animationRef.current) {
-            clearInterval(animationRef.current);
-            animationRef.current = null;
-          }
-          setCurrentSprite("jung_neutral.png");
-          setIsJungSpeaking(false);
-          setIsAudioPlaying(false);
-          setDream("");
-          setAnalysis("");
-          // Always set conversationStep to 0 after speech ends
-          setConversationStep(0);
-        };
-
-        source.start(0);
-        console.log("Audio source started");
-      } catch (error) {
-        console.error("Error with audio playback:", error);
+      // Handle audio completion
+      source.onended = () => {
+        console.log("Audio ended");
         if (animationRef.current) {
           clearInterval(animationRef.current);
           animationRef.current = null;
         }
+        setCurrentSprite("jung_neutral.png");
         setIsJungSpeaking(false);
         setIsAudioPlaying(false);
-        setCurrentSprite("jung_neutral.png");
+        setDream("");
+        setAnalysis("");
+        setConversationStep(0);
+      };
+
+      // Start playback
+      source.start(0);
+      console.log("Audio source started");
+
+    } catch (error) {
+      console.error("Error with audio playback:", error);
+      if (animationRef.current) {
+        clearInterval(animationRef.current);
+        animationRef.current = null;
       }
-    } else {
-      console.error('Failed to generate speech');
       setIsJungSpeaking(false);
       setIsAudioPlaying(false);
       setCurrentSprite("jung_neutral.png");
