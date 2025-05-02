@@ -11,8 +11,10 @@ export default function Home() {
   const [currentSprite, setCurrentSprite] = useState("jung_neutral.png");
   const [isJungSpeaking, setIsJungSpeaking] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isAudioInitialized, setIsAudioInitialized] = useState(false);
   const animationRef = useRef(null);
   const blinkRef = useRef(null);
+  const audioContextRef = useRef(null);
 
   // Welcome messages
   const welcomeMessages = [
@@ -39,6 +41,38 @@ export default function Home() {
     if (conversationStep === -1) {
       handleSpeech(getRandomWelcomeMessage());
     }
+  }, []);
+
+  // Initialize audio context on user interaction
+  useEffect(() => {
+    const initializeAudio = async () => {
+      if (!audioContextRef.current) {
+        audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+        try {
+          await audioContextRef.current.resume();
+          setIsAudioInitialized(true);
+          console.log('Audio context initialized:', audioContextRef.current.state);
+        } catch (error) {
+          console.error('Error initializing audio context:', error);
+        }
+      }
+    };
+
+    // Add event listeners for user interaction
+    const handleUserInteraction = () => {
+      initializeAudio();
+      // Remove event listeners after first interaction
+      document.removeEventListener('click', handleUserInteraction);
+      document.removeEventListener('touchstart', handleUserInteraction);
+    };
+
+    document.addEventListener('click', handleUserInteraction);
+    document.addEventListener('touchstart', handleUserInteraction);
+
+    return () => {
+      document.removeEventListener('click', handleUserInteraction);
+      document.removeEventListener('touchstart', handleUserInteraction);
+    };
   }, []);
 
   async function onSubmit() {
@@ -129,14 +163,22 @@ export default function Home() {
 
     if (response.ok) {
       const audioData = await response.arrayBuffer();
-      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      
+      try {
+        // Create audio context if it doesn't exist
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // Resume audio context if it's suspended (required for mobile)
+        if (audioCtx.state === 'suspended') {
+          await audioCtx.resume();
+        }
 
-      // Start the mouth animation
-      animationRef.current = setInterval(() => {
-        setCurrentSprite(prev => prev === "jung_neutral.png" ? "jung_open_mouth.png" : "jung_neutral.png");
-      }, 300);
+        // Start the mouth animation
+        animationRef.current = setInterval(() => {
+          setCurrentSprite(prev => prev === "jung_neutral.png" ? "jung_open_mouth.png" : "jung_neutral.png");
+        }, 300);
 
-      audioCtx.decodeAudioData(audioData, (buffer) => {
+        const buffer = await audioCtx.decodeAudioData(audioData);
         const source = audioCtx.createBufferSource();
         source.buffer = buffer;
         source.playbackRate.value = 0.75;
@@ -158,15 +200,15 @@ export default function Home() {
         };
 
         source.start(0);
-      }, (e) => {
-        console.log("Error with decoding audio data", e.err);
+      } catch (error) {
+        console.error("Error with audio playback:", error);
         if (animationRef.current) {
           clearInterval(animationRef.current);
           animationRef.current = null;
         }
         setIsJungSpeaking(false);
         setCurrentSprite("jung_neutral.png");
-      });
+      }
     } else {
       console.error('Failed to generate speech');
       setIsJungSpeaking(false);
