@@ -204,11 +204,6 @@ export default function Home() {
         await audioContextRef.current.resume();
       }
 
-      // Start the mouth animation
-      animationRef.current = setInterval(() => {
-        setCurrentSprite(prev => prev === "jung_neutral.png" ? "jung_open_mouth.png" : "jung_neutral.png");
-      }, 300);
-
       // Fetch audio data
       const response = await fetch('/api/speech', {
         method: 'POST',
@@ -298,6 +293,11 @@ export default function Home() {
         setAnalysis("");
         setConversationStep(0);
       };
+
+      // Start the mouth animation just before starting the audio
+      animationRef.current = setInterval(() => {
+        setCurrentSprite(prev => prev === "jung_neutral.png" ? "jung_open_mouth.png" : "jung_neutral.png");
+      }, 300);
 
       // Start playback
       source.start(0);
