@@ -10,11 +10,15 @@ export default function Home() {
   const [conversationStep, setConversationStep] = useState(-2); // Start at -2 for initial state
   const [currentSprite, setCurrentSprite] = useState("jung_neutral.png");
   const [isJungSpeaking, setIsJungSpeaking] = useState(false);
+  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [currentMessage, setCurrentMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isAudioInitialized, setIsAudioInitialized] = useState(false);
   const animationRef = useRef(null);
   const blinkRef = useRef(null);
   const audioContextRef = useRef(null);
+  const scrollContainerRef = useRef(null);
 
   // Welcome messages
   const welcomeMessages = [
@@ -32,8 +36,10 @@ export default function Home() {
   };
 
   const startConversation = () => {
+    const welcomeMessage = getRandomWelcomeMessage();
+    setCurrentMessage(welcomeMessage);
     setConversationStep(-1);
-    handleSpeech(getRandomWelcomeMessage());
+    handleSpeech(welcomeMessage);
   };
 
   useEffect(() => {
@@ -85,6 +91,7 @@ export default function Home() {
 
       setIsLoading(true);
       setCurrentSprite("jung_inhale.png");
+      setIsTransitioning(true);
       const response = await fetch("/api/generate", {
         method: "POST",
         headers: {
@@ -111,6 +118,7 @@ export default function Home() {
     } catch (error) {
       console.error("on submit err: ", error);
       setCurrentSprite("jung_neutral.png");
+      setIsTransitioning(false);
     } finally {
       setIsLoading(false);
     }
@@ -154,7 +162,10 @@ export default function Home() {
   }, [isListening]);
 
   const handleSpeech = async (data) => {
+    console.log("Starting speech handling");
     setIsJungSpeaking(true);
+    setIsTransitioning(false);
+    setCurrentMessage(data);
     const response = await fetch('/api/speech', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -163,11 +174,11 @@ export default function Home() {
 
     if (response.ok) {
       const audioData = await response.arrayBuffer();
-      
+
       try {
         // Create audio context if it doesn't exist
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        
+
         // Resume audio context if it's suspended (required for mobile)
         if (audioCtx.state === 'suspended') {
           await audioCtx.resume();
@@ -184,7 +195,44 @@ export default function Home() {
         source.playbackRate.value = 0.75;
         source.connect(audioCtx.destination);
 
+        // Set playing state immediately before starting
+        setIsAudioPlaying(true);
+        console.log("Audio playing state set to true");
+
+        // Start auto-scroll after a short delay to allow content to render
+        setTimeout(() => {
+          if (scrollContainerRef.current) {
+            const container = scrollContainerRef.current;
+            const contentHeight = container.scrollHeight;
+            const containerHeight = container.clientHeight;
+            const scrollDistance = contentHeight - containerHeight;
+            
+            if (scrollDistance > 0) {
+              const startTime = performance.now();
+              // Base duration of 20 seconds for medium length text (about 200px scroll)
+              // Add 2 seconds for every additional 100px of scroll
+              const baseDuration = 20000; // 20 seconds
+              const additionalDuration = Math.floor(scrollDistance / 100) * 2000; // 2 seconds per 100px
+              const duration = baseDuration + additionalDuration;
+              
+              const animateScroll = (currentTime) => {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const currentScroll = progress * scrollDistance;
+                container.scrollTop = currentScroll;
+                
+                if (progress < 1) {
+                  requestAnimationFrame(animateScroll);
+                }
+              };
+              
+              requestAnimationFrame(animateScroll);
+            }
+          }
+        }, 500);
+
         source.onended = function () {
+          console.log("Audio ended");
           // Stop the animation when audio ends
           if (animationRef.current) {
             clearInterval(animationRef.current);
@@ -192,14 +240,15 @@ export default function Home() {
           }
           setCurrentSprite("jung_neutral.png");
           setIsJungSpeaking(false);
+          setIsAudioPlaying(false);
           setDream("");
           setAnalysis("");
-          if (conversationStep === -1) {
-            setConversationStep(0);
-          }
+          // Always set conversationStep to 0 after speech ends
+          setConversationStep(0);
         };
 
         source.start(0);
+        console.log("Audio source started");
       } catch (error) {
         console.error("Error with audio playback:", error);
         if (animationRef.current) {
@@ -207,11 +256,13 @@ export default function Home() {
           animationRef.current = null;
         }
         setIsJungSpeaking(false);
+        setIsAudioPlaying(false);
         setCurrentSprite("jung_neutral.png");
       }
     } else {
       console.error('Failed to generate speech');
       setIsJungSpeaking(false);
+      setIsAudioPlaying(false);
       setCurrentSprite("jung_neutral.png");
     }
   };
@@ -274,7 +325,7 @@ export default function Home() {
 
       <div className="App">
         <header className="App-header" style={{
-          width: "100vw",
+          width: "100%",
           height: "100vh",
           position: "relative",
           overflow: "hidden",
@@ -294,8 +345,41 @@ export default function Home() {
             justifyContent: "center",
             alignItems: "center"
           }}>
+            {isAudioPlaying && (
+              <div style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                maxHeight: "240px",
+                backgroundColor: "white",
+                padding: "20px",
+                boxShadow: "0 2px 10px rgba(0,0,0,0.2)",
+                zIndex: 2,
+                overflow: "hidden"
+              }}>
+                <div 
+                  ref={scrollContainerRef}
+                  style={{
+                    maxHeight: "200px", // 240px - 40px padding
+                    overflowY: "auto",
+                    paddingRight: "10px"
+                  }}
+                >
+                  <p style={{
+                    margin: 0,
+                    color: "black",
+                    fontSize: "1.2em",
+                    lineHeight: "1.5",
+                    whiteSpace: "pre-wrap"
+                  }}>
+                    {currentMessage}
+                  </p>
+                </div>
+              </div>
+            )}
             <img
-              src={currentSprite}
+              src={isTransitioning ? "jung_inhale.png" : currentSprite}
               alt="Carl Jung portrait"
               style={{
                 width: "100%",
@@ -305,52 +389,6 @@ export default function Home() {
             />
           </div>
 
-          {/* <div style={{ 
-            position: "relative",
-            zIndex: 1,
-            width: "100%",
-            textAlign: "center",
-            padding: "20px"
-          }}>
-            <h1 style={{ 
-              color: "white", 
-              margin: 0,
-              fontSize: "2.5em",
-              textShadow: "2px 2px 4px rgba(0, 0, 0, 0.5)"
-            }}>🕯️ AskJung.net 🕯️</h1>
-          </div> */}
-
-          {inputMethod === "SPEECH" && isListening && dream && (
-            <p style={{
-              textAlign: "left",
-              position: "absolute",
-              bottom: "52px",
-              maxWidth: "400px",
-              transform: "translateY(-132px)",
-              backgroundColor: "black",
-              color: "white",
-              opacity: "0.8",
-              zIndex: 1
-            }}>
-              {`ME: ${dream}`}
-            </p>
-          )}
-
-          {conversationStep > -1 && analysis && (
-            <p style={{
-              textAlign: "left",
-              position: "absolute",
-              bottom: "0px",
-              maxWidth: "400px",
-              backgroundColor: "black",
-              color: "white",
-              opacity: "0.8",
-              zIndex: 1
-            }}>
-              {`JUNG: ${analysis}`}
-            </p>
-          )}
-
           {!isJungSpeaking && (
             <div style={{
               position: "relative",
@@ -358,7 +396,8 @@ export default function Home() {
               width: "100%",
               textAlign: "center",
               padding: "20px",
-              marginTop: "auto"
+              marginTop: "auto",
+              backgroundColor: "white"
             }}>
               {conversationStep === -2 ? (
                 <button
@@ -395,29 +434,76 @@ export default function Home() {
               ) : (
                 <>
                   {inputMethod === "SPEECH" ? (
-                    <button onClick={() => {
-                      if (!isListening) {
-                        setIsListening(true);
-                      } else {
-                        setIsListening(false);
-                        if (!dream.trim()) {
-                          handleSpeech("Please share your dream with me. I cannot analyze what I cannot see.");
-                          return;
-                        }
-                        onSubmit();
-                      }
-                    }} style={{
-                      width: "120px",
-                      height: "120px",
-                      borderRadius: "50%",
-                      backgroundColor: "white",
-                      border: "none",
-                      cursor: "pointer",
-                      filter: isListening ? "invert(1)" : "invert(0)"
-
-                    }}>
-                      <img src="/icon_mic.png" alt="microphone" style={{ width: "100%", height: "100%" }} />
-                    </button>
+                    <>
+                      {!isListening ? (
+                        <button onClick={() => setIsListening(true)} style={{
+                          width: "120px",
+                          height: "120px",
+                          borderRadius: "50%",
+                          backgroundColor: "white",
+                          border: "none",
+                          cursor: "pointer",
+                          filter: "invert(1)",
+                          padding: "16px",
+                        }}>
+                          <img src="/icon_mic.png" alt="microphone" style={{ width: "100%", height: "100%" }} />
+                        </button>
+                      ) : (
+                        <>
+                          <p style={{
+                            color: "black",
+                            fontSize: "1.4em",
+                            marginBottom: "20px",
+                            backgroundColor: "white",
+                          }}>
+                            {dream || "Listening..."}
+                          </p>
+                          <div style={{
+                            display: "flex",
+                            gap: "20px",
+                            justifyContent: "center"
+                          }}>
+                            <button 
+                              onClick={() => {
+                                setIsListening(false);
+                                onSubmit();
+                              }}
+                              style={{
+                                width: "120px",
+                                height: "60px",
+                                fontSize: "1.2em",
+                                backgroundColor: "#4a4a4a",
+                                color: "white",
+                                border: "none",
+                                borderRadius: "8px",
+                                cursor: "pointer"
+                              }}
+                            >
+                              Submit
+                            </button>
+                            <button 
+                              onClick={() => {
+                                setIsListening(false);
+                                setDream("");
+                                setIsListening(true);
+                              }}
+                              style={{
+                                width: "120px",
+                                height: "60px",
+                                fontSize: "1.2em",
+                                backgroundColor: "#4a4a4a",
+                                color: "white",
+                                border: "none",
+                                borderRadius: "8px",
+                                cursor: "pointer"
+                              }}
+                            >
+                              Start Over
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </>
                   ) : (
                     <form onSubmit={(e) => {
                       e.preventDefault();
@@ -472,23 +558,6 @@ export default function Home() {
                       </div>
                     </form>
                   )}
-
-                  {/* {conversationStep !== -1 && (
-                    <p
-                      onClick={() => {
-                        inputMethod === "SPEECH" ? setInputMethod("TEXT") : setInputMethod("SPEECH");
-                        setDream("");
-                      }}
-                      style={{ 
-                        textDecoration: "underline", 
-                        cursor: "pointer",
-                        color: "white",
-                        textShadow: "1px 1px 2px rgba(0, 0, 0, 0.5)"
-                      }}
-                    >
-                      {`Or would you rather ${inputMethod === "SPEECH" ? "type" : "talk"} ?`}
-                    </p>
-                  )} */}
                 </>
               )}
             </div>
