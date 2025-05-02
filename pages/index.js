@@ -12,6 +12,7 @@ export default function Home() {
   const [isJungSpeaking, setIsJungSpeaking] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const animationRef = useRef(null);
+  const blinkRef = useRef(null);
 
   // Welcome messages
   const welcomeMessages = [
@@ -192,6 +193,36 @@ export default function Home() {
       }
     };
   }, []);
+
+  // Add blinking animation
+  useEffect(() => {
+    if (!isJungSpeaking) {
+      const blink = () => {
+        setCurrentSprite("jung_blink.png");
+        setTimeout(() => {
+          setCurrentSprite("jung_neutral.png");
+        }, 200); // Blink duration
+      };
+
+      // Random interval between 2-5 seconds
+      const getRandomInterval = () => Math.floor(Math.random() * 3000) + 2000;
+
+      const scheduleBlink = () => {
+        blinkRef.current = setTimeout(() => {
+          blink();
+          scheduleBlink();
+        }, getRandomInterval());
+      };
+
+      scheduleBlink();
+    }
+
+    return () => {
+      if (blinkRef.current) {
+        clearTimeout(blinkRef.current);
+      }
+    };
+  }, [isJungSpeaking]);
 
   return (
     <div>
