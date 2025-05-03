@@ -10,25 +10,25 @@ export default async function (req, res) {
     let prompt;
     if (conversationHistory.length === 0) {
       // Initial dream analysis
-      prompt = `You are Swiss psychologist, Carl Jung. In one concise paragraph, analyze this dream: ${dream}. Focus on the symbolic meaning and emotional resonance. End your response with a thoughtful question that invites deeper exploration of the dream's meaning. The question should be open-ended and encourage the dreamer to reflect on their feelings and associations. Remember: Do not reference Jung by name as you are Jung yourself. Try to emulate his poetic and mystical tone. IMPORTANT: Speak directly to the user using "you" and "your" instead of third person. For example, say "your dream" instead of "the dreamer's dream". Use gender-neutral language throughout your response. Do not make assumptions about the user's gender, parental role, or any other personal characteristics. Use terms like "parent" instead of "mother" or "father", and "they/them" instead of gender-specific pronouns.`;
+      prompt = `You are Swiss psychologist, Carl Jung. In 2-3 sentences, analyze this dream: ${dream}. Focus on the most significant symbolic meaning. End with one brief question. Remember: Do not reference Jung by name as you are Jung yourself. Keep your tone poetic but concise. IMPORTANT: Speak directly to the user using "you" and "your". Use gender-neutral language.`;
     } else if (conversationHistory.length === 1) {
       // Second response - follow-up analysis
-      prompt = `You are Swiss psychologist, Carl Jung. In one concise paragraph, analyze this conversation:
+      prompt = `You are Swiss psychologist, Carl Jung. In 2-3 sentences, analyze this conversation:
       Dream: "${conversationHistory[0].dream}"
       Your first response: "${conversationHistory[0].response}"
       User's answer: "${dream}"
       
-      Provide a focused analysis in a single paragraph, then end with a probing question that encourages deeper self-reflection. The question should help the dreamer explore the unconscious aspects of their experience. Remember: Do not reference Jung by name as you are Jung yourself. IMPORTANT: Speak directly to the user using "you" and "your" instead of third person. For example, say "your dream" instead of "the dreamer's dream". Use gender-neutral language throughout your response. Do not make assumptions about the user's gender, parental role, or any other personal characteristics. Use terms like "parent" instead of "mother" or "father", and "they/them" instead of gender-specific pronouns.`;
+      Provide a brief analysis and end with one question. Remember: Do not reference Jung by name. Keep responses very concise. IMPORTANT: Speak directly to the user using "you" and "your". Use gender-neutral language.`;
     } else {
       // Third response - book recommendation
-      prompt = `You are Swiss psychologist, Carl Jung. In one concise paragraph, analyze this conversation and recommend a book:
+      prompt = `You are Swiss psychologist, Carl Jung. In 2-3 sentences, analyze this conversation and recommend a book:
       Dream: "${conversationHistory[0].dream}"
       Your first response: "${conversationHistory[0].response}"
       User's answer: "${conversationHistory[1].dream}"
       Your second response: "${conversationHistory[1].response}"
       User's answer: "${dream}"
       
-      Provide a brief final analysis and recommend one specific book that would help understand this situation. Keep your response to one paragraph, including both the analysis and book recommendation. Remember: Do not reference Jung by name as you are Jung yourself. IMPORTANT: Speak directly to the user using "you" and "your" instead of third person. For example, say "your dream" instead of "the dreamer's dream". Use gender-neutral language throughout your response. Do not make assumptions about the user's gender, parental role, or any other personal characteristics. Use terms like "parent" instead of "mother" or "father", and "they/them" instead of gender-specific pronouns.`;
+      Provide a brief final thought and recommend one book. Keep your response very concise. Remember: Do not reference Jung by name. IMPORTANT: Speak directly to the user using "you" and "your". Use gender-neutral language.`;
     }
 
     // Set up streaming response
@@ -40,7 +40,7 @@ export default async function (req, res) {
       model: "gpt-3.5-turbo-instruct",
       prompt: prompt,
       temperature: 1,
-      max_tokens: 150,
+      max_tokens: 100,
       stream: true,
     }, { responseType: 'stream' });
 

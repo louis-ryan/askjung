@@ -8,13 +8,14 @@ export default function Home() {
   const [isListening, setIsListening] = useState(false);
   const [conversationHistory, setConversationHistory] = useState([]);
   const [conversationStep, setConversationStep] = useState(-2); // Start at -2 for initial state
-  const [currentSprite, setCurrentSprite] = useState("jung_neutral.png");
+  const [currentSprite, setCurrentSprite] = useState("jung_neutral_ext.png");
   const [isJungSpeaking, setIsJungSpeaking] = useState(false);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [currentMessage, setCurrentMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isAudioInitialized, setIsAudioInitialized] = useState(false);
+  const [speechInstruction, setSpeechInstruction] = useState(true);
   const animationRef = useRef(null);
   const blinkRef = useRef(null);
   const audioContextRef = useRef(null);
@@ -57,12 +58,12 @@ export default function Home() {
           // Create audio context with proper mobile support
           const AudioContext = window.AudioContext || window.webkitAudioContext;
           audioContextRef.current = new AudioContext();
-          
+
           // Resume audio context if it's suspended (required for mobile)
           if (audioContextRef.current.state === 'suspended') {
             await audioContextRef.current.resume();
           }
-          
+
           setIsAudioInitialized(true);
           console.log('Audio context initialized:', audioContextRef.current.state);
         }
@@ -83,7 +84,7 @@ export default function Home() {
 
     // Check if we're on a mobile device
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    
+
     if (isMobile) {
       // For mobile, we need to initialize audio context on first touch
       document.addEventListener('touchstart', handleUserInteraction, { once: true });
@@ -107,9 +108,10 @@ export default function Home() {
       }
 
       setIsLoading(true);
-      setCurrentSprite("jung_inhale.png");
+      setCurrentSprite("jung_inhale_ext.png");
       setIsTransitioning(true);
-      
+      setIsListening(false); // Ensure microphone is turned off
+
       let fullResponse = '';
       const response = await fetch("/api/generate", {
         method: "POST",
@@ -160,7 +162,7 @@ export default function Home() {
 
     } catch (error) {
       console.error("on submit err: ", error);
-      setCurrentSprite("jung_neutral.png");
+      setCurrentSprite("jung_neutral_ext.png");
       setIsTransitioning(false);
     } finally {
       setIsLoading(false);
@@ -263,7 +265,7 @@ export default function Home() {
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        
+
         chunks.push(value);
         totalLength += value.length;
       }
@@ -278,7 +280,7 @@ export default function Home() {
 
       // Decode audio data in a separate task to prevent blocking
       const buffer = await audioContextRef.current.decodeAudioData(audioData.buffer);
-      
+
       // Create and configure audio source
       const source = audioContextRef.current.createBufferSource();
       source.buffer = buffer;
@@ -296,24 +298,24 @@ export default function Home() {
           const contentHeight = container.scrollHeight;
           const containerHeight = container.clientHeight;
           const scrollDistance = contentHeight - containerHeight;
-          
+
           if (scrollDistance > 0) {
             const startTime = performance.now();
             const baseDuration = 20000;
             const additionalDuration = Math.floor(scrollDistance / 100) * 2000;
             const duration = baseDuration + additionalDuration;
-            
+
             const animateScroll = (currentTime) => {
               const elapsed = currentTime - startTime;
               const progress = Math.min(elapsed / duration, 1);
               const currentScroll = progress * scrollDistance;
               container.scrollTop = currentScroll;
-              
+
               if (progress < 1) {
                 requestAnimationFrame(animateScroll);
               }
             };
-            
+
             requestAnimationFrame(animateScroll);
           }
         }
@@ -326,7 +328,7 @@ export default function Home() {
           clearInterval(animationRef.current);
           animationRef.current = null;
         }
-        setCurrentSprite("jung_neutral.png");
+        setCurrentSprite("jung_neutral_ext.png");
         setIsJungSpeaking(false);
         setIsAudioPlaying(false);
         setDream("");
@@ -337,7 +339,7 @@ export default function Home() {
       // Start the mouth animation and end transition just before starting the audio
       setIsTransitioning(false);
       animationRef.current = setInterval(() => {
-        setCurrentSprite(prev => prev === "jung_neutral.png" ? "jung_open_mouth.png" : "jung_neutral.png");
+        setCurrentSprite(prev => prev === "jung_neutral_ext.png" ? "jung_open_mouth_ext.png" : "jung_neutral_ext.png");
       }, 300);
 
       // Start playback
@@ -352,7 +354,7 @@ export default function Home() {
       }
       setIsJungSpeaking(false);
       setIsAudioPlaying(false);
-      setCurrentSprite("jung_neutral.png");
+      setCurrentSprite("jung_neutral_ext.png");
       setIsTransitioning(false);
       // Provide user feedback for mobile-specific errors
       if (error.message.includes('AudioContext')) {
@@ -385,9 +387,9 @@ export default function Home() {
   useEffect(() => {
     if (!isJungSpeaking) {
       const blink = () => {
-        setCurrentSprite("jung_blink.png");
+        setCurrentSprite("jung_blink_ext.png");
         setTimeout(() => {
-          setCurrentSprite("jung_neutral.png");
+          setCurrentSprite("jung_neutral_ext.png");
         }, 200); // Blink duration
       };
 
@@ -442,7 +444,7 @@ export default function Home() {
             {isAudioPlaying && (
               <div style={{
                 position: "absolute",
-                bottom: "20%",
+                bottom: "24px",
                 left: "50%",
                 transform: "translateX(-50%)",
                 width: "90%",
@@ -452,10 +454,9 @@ export default function Home() {
                 boxShadow: "0 2px 10px rgba(0,0,0,0.2)",
                 zIndex: 2,
                 borderRadius: "10px",
-                maxHeight: "30vh",
                 overflow: "hidden"
               }}>
-                <div 
+                <div
                   ref={scrollContainerRef}
                   style={{
                     maxHeight: "30vh",
@@ -478,7 +479,7 @@ export default function Home() {
               </div>
             )}
             <img
-              src={isTransitioning ? "jung_inhale.png" : currentSprite}
+              src={isTransitioning ? "jung_inhale_ext.png" : currentSprite}
               alt="Carl Jung portrait"
               style={{
                 width: "80%", // Reduced size
@@ -540,18 +541,30 @@ export default function Home() {
                   {inputMethod === "SPEECH" ? (
                     <>
                       {!isListening ? (
-                        <button onClick={() => setIsListening(true)} style={{
-                          width: "120px",
-                          height: "120px",
-                          borderRadius: "50%",
-                          backgroundColor: "white",
-                          border: "none",
-                          cursor: "pointer",
-                          filter: "invert(1)",
-                          padding: "16px",
-                        }}>
-                          <img src="/icon_mic.png" alt="microphone" style={{ width: "100%", height: "100%" }} />
-                        </button>
+                        <div>
+                          {speechInstruction && (
+                            <h4 style={{ marginBottom: "24px" }}>
+                              Tap the microphone and describe your dream
+                            </h4>
+                          )}
+                          <button
+                            onClick={() => {
+                              setIsListening(true);
+                              setSpeechInstruction(false);
+                            }}
+                            style={{
+                              width: "120px",
+                              height: "120px",
+                              borderRadius: "50%",
+                              backgroundColor: "white",
+                              border: "none",
+                              cursor: "pointer",
+                              filter: "invert(1)",
+                              padding: "16px",
+                            }}>
+                            <img src="/icon_mic.png" alt="microphone" style={{ width: "100%", height: "100%" }} />
+                          </button>
+                        </div>
                       ) : (
                         <>
                           <p style={{
@@ -566,7 +579,7 @@ export default function Home() {
                             gap: "20px",
                             justifyContent: "center"
                           }}>
-                            <button 
+                            <button
                               onClick={() => {
                                 setIsListening(false);
                                 onSubmit();
@@ -584,7 +597,7 @@ export default function Home() {
                             >
                               Submit
                             </button>
-                            <button 
+                            <button
                               onClick={() => {
                                 setIsListening(false);
                                 setDream("");
