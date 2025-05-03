@@ -52,15 +52,24 @@ export default function Home() {
   // Initialize audio context on user interaction
   useEffect(() => {
     const initializeAudio = async () => {
-      if (!audioContextRef.current) {
-        audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
-        try {
-          await audioContextRef.current.resume();
+      try {
+        if (!audioContextRef.current) {
+          // Create audio context with proper mobile support
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          audioContextRef.current = new AudioContext();
+          
+          // Resume audio context if it's suspended (required for mobile)
+          if (audioContextRef.current.state === 'suspended') {
+            await audioContextRef.current.resume();
+          }
+          
           setIsAudioInitialized(true);
           console.log('Audio context initialized:', audioContextRef.current.state);
-        } catch (error) {
-          console.error('Error initializing audio context:', error);
         }
+      } catch (error) {
+        console.error('Error initializing audio context:', error);
+        // Provide fallback for mobile devices
+        setIsAudioInitialized(false);
       }
     };
 
@@ -72,8 +81,16 @@ export default function Home() {
       document.removeEventListener('touchstart', handleUserInteraction);
     };
 
-    document.addEventListener('click', handleUserInteraction);
-    document.addEventListener('touchstart', handleUserInteraction);
+    // Check if we're on a mobile device
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    if (isMobile) {
+      // For mobile, we need to initialize audio context on first touch
+      document.addEventListener('touchstart', handleUserInteraction, { once: true });
+    } else {
+      // For desktop, we can initialize on click
+      document.addEventListener('click', handleUserInteraction, { once: true });
+    }
 
     return () => {
       document.removeEventListener('click', handleUserInteraction);
@@ -158,8 +175,9 @@ export default function Home() {
     if (SpeechRecognition) {
       const recognition = new SpeechRecognition();
 
-      recognition.continuous = true; // Keep listening even after a pause
-      recognition.interimResults = true; // Show results even before it's final
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US'; // Set language explicitly
 
       recognition.onstart = () => {
         console.log('Voice recognition started. Speak into the microphone.');
@@ -171,12 +189,32 @@ export default function Home() {
         setDream(transcript);
       };
 
+      recognition.onerror = (event) => {
+        // Only log errors that aren't expected aborts
+        if (event.error !== 'aborted') {
+          console.error('Speech recognition error:', event.error);
+          if (event.error === 'not-allowed') {
+            // Handle permission denied
+            alert('Please enable microphone access in your browser settings.');
+          }
+        }
+      };
+
       recognition.onend = () => {
-        console.log('Voice recognition stopped.');
+        // Only log if we're still in listening mode (unexpected end)
+        if (isListening) {
+          console.log('Voice recognition stopped unexpectedly.');
+        }
       };
 
       if (isListening) {
-        recognition.start();
+        try {
+          recognition.start();
+        } catch (error) {
+          console.error('Error starting speech recognition:', error);
+          setIsListening(false);
+          alert('Speech recognition is not available. Please check your microphone permissions.');
+        }
       } else {
         recognition.stop();
       }
@@ -184,19 +222,21 @@ export default function Home() {
       return () => recognition.abort();
     } else {
       console.warn('Speech recognition not available');
+      // Provide fallback for browsers without speech recognition
+      alert('Speech recognition is not supported in your browser. Please use a modern browser like Chrome.');
     }
   }, [isListening]);
 
   const handleSpeech = async (data) => {
     console.log("Starting speech handling");
     setIsJungSpeaking(true);
-    setIsTransitioning(false);
     setCurrentMessage(data);
 
     try {
-      // Create audio context if it doesn't exist
+      // Check if audio context is initialized
       if (!audioContextRef.current) {
-        audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        audioContextRef.current = new AudioContext();
       }
 
       // Resume audio context if it's suspended (required for mobile)
@@ -259,7 +299,7 @@ export default function Home() {
           
           if (scrollDistance > 0) {
             const startTime = performance.now();
-            const baseDuration = 20000; // 20 seconds
+            const baseDuration = 20000;
             const additionalDuration = Math.floor(scrollDistance / 100) * 2000;
             const duration = baseDuration + additionalDuration;
             
@@ -294,7 +334,8 @@ export default function Home() {
         setConversationStep(0);
       };
 
-      // Start the mouth animation just before starting the audio
+      // Start the mouth animation and end transition just before starting the audio
+      setIsTransitioning(false);
       animationRef.current = setInterval(() => {
         setCurrentSprite(prev => prev === "jung_neutral.png" ? "jung_open_mouth.png" : "jung_neutral.png");
       }, 300);
@@ -312,6 +353,11 @@ export default function Home() {
       setIsJungSpeaking(false);
       setIsAudioPlaying(false);
       setCurrentSprite("jung_neutral.png");
+      setIsTransitioning(false);
+      // Provide user feedback for mobile-specific errors
+      if (error.message.includes('AudioContext')) {
+        alert('Audio playback is not supported. Please try a different browser or device.');
+      }
     }
   };
 
@@ -396,22 +442,27 @@ export default function Home() {
             {isAudioPlaying && (
               <div style={{
                 position: "absolute",
-                top: 0,
-                left: 0,
-                right: 0,
-                maxHeight: "240px",
+                bottom: "20%",
+                left: "50%",
+                transform: "translateX(-50%)",
+                width: "90%",
+                maxWidth: "600px",
                 backgroundColor: "white",
-                padding: "20px",
+                padding: "15px",
                 boxShadow: "0 2px 10px rgba(0,0,0,0.2)",
                 zIndex: 2,
+                borderRadius: "10px",
+                maxHeight: "30vh",
                 overflow: "hidden"
               }}>
                 <div 
                   ref={scrollContainerRef}
                   style={{
-                    maxHeight: "200px", // 240px - 40px padding
+                    maxHeight: "30vh",
                     overflowY: "auto",
-                    paddingRight: "10px"
+                    paddingRight: "10px",
+                    scrollbarWidth: "thin",
+                    scrollbarColor: "#4a4a4a #f0f0f0"
                   }}
                 >
                   <p style={{
@@ -430,21 +481,26 @@ export default function Home() {
               src={isTransitioning ? "jung_inhale.png" : currentSprite}
               alt="Carl Jung portrait"
               style={{
-                width: "100%",
-                height: "100%",
-                objectFit: "contain"
+                width: "80%", // Reduced size
+                height: "auto",
+                objectFit: "contain",
+                position: "absolute",
+                top: "15%", // Moved higher
+                left: "50%",
+                transform: "translateX(-50%)"
               }}
             />
           </div>
 
           {!isJungSpeaking && (
             <div style={{
-              position: "relative",
+              position: "absolute",
+              bottom: 0,
+              left: 0,
+              right: 0,
               zIndex: 1,
-              width: "100%",
               textAlign: "center",
               padding: "20px",
-              marginTop: "auto",
               backgroundColor: "white"
             }}>
               {conversationStep === -2 ? (
@@ -465,7 +521,7 @@ export default function Home() {
                 </button>
               ) : conversationStep === 2 ? (
                 <>
-                  <p style={{ marginBottom: "20px", color: "white" }}>Thank you for sharing your dream. I hope my analysis and book recommendation have been helpful.</p>
+                  <p style={{ marginBottom: "20px", color: "black" }}>Thank you for sharing your dream. I hope my analysis and book recommendation have been helpful.</p>
                   <p
                     onClick={resetConversation}
                     style={{
@@ -502,7 +558,6 @@ export default function Home() {
                             color: "black",
                             fontSize: "1.4em",
                             marginBottom: "20px",
-                            backgroundColor: "white",
                           }}>
                             {dream || "Listening..."}
                           </p>
@@ -576,7 +631,7 @@ export default function Home() {
                         style={{
                           width: "80%",
                           maxWidth: "400px",
-                          height: "160px",
+                          height: "120px", // Reduced height
                           marginBottom: "20px",
                           padding: "10px",
                           borderRadius: "8px",
