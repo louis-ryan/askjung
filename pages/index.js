@@ -37,11 +37,31 @@ export default function Home() {
     return welcomeMessages[randomIndex];
   };
 
-  const startConversation = () => {
-    const welcomeMessage = getRandomWelcomeMessage();
-    setCurrentMessage(welcomeMessage);
-    setConversationStep(-1);
-    handleSpeech(welcomeMessage);
+  const startConversation = async () => {
+    try {
+      // Initialize audio context
+      if (!audioContextRef.current) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        audioContextRef.current = new AudioContext();
+        
+        // Resume audio context if it's suspended (required for mobile)
+        if (audioContextRef.current.state === 'suspended') {
+          await audioContextRef.current.resume();
+        }
+        
+        setIsAudioInitialized(true);
+        console.log('Audio context initialized:', audioContextRef.current.state);
+      }
+
+      const welcomeMessage = getRandomWelcomeMessage();
+      setCurrentMessage(welcomeMessage);
+      setConversationStep(-1);
+      handleSpeech(welcomeMessage);
+    } catch (error) {
+      console.error('Error initializing audio:', error);
+      // Provide fallback for mobile devices
+      setIsAudioInitialized(false);
+    }
   };
 
   useEffect(() => {
@@ -49,55 +69,6 @@ export default function Home() {
     if (conversationStep === -1) {
       handleSpeech(getRandomWelcomeMessage());
     }
-  }, []);
-
-  // Initialize audio context on user interaction
-  useEffect(() => {
-    const initializeAudio = async () => {
-      try {
-        if (!audioContextRef.current) {
-          // Create audio context with proper mobile support
-          const AudioContext = window.AudioContext || window.webkitAudioContext;
-          audioContextRef.current = new AudioContext();
-
-          // Resume audio context if it's suspended (required for mobile)
-          if (audioContextRef.current.state === 'suspended') {
-            await audioContextRef.current.resume();
-          }
-
-          setIsAudioInitialized(true);
-          console.log('Audio context initialized:', audioContextRef.current.state);
-        }
-      } catch (error) {
-        console.error('Error initializing audio context:', error);
-        // Provide fallback for mobile devices
-        setIsAudioInitialized(false);
-      }
-    };
-
-    // Add event listeners for user interaction
-    const handleUserInteraction = () => {
-      initializeAudio();
-      // Remove event listeners after first interaction
-      document.removeEventListener('click', handleUserInteraction);
-      document.removeEventListener('touchstart', handleUserInteraction);
-    };
-
-    // Check if we're on a mobile device
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-
-    if (isMobile) {
-      // For mobile, we need to initialize audio context on first touch
-      document.addEventListener('touchstart', handleUserInteraction, { once: true });
-    } else {
-      // For desktop, we can initialize on click
-      document.addEventListener('click', handleUserInteraction, { once: true });
-    }
-
-    return () => {
-      document.removeEventListener('click', handleUserInteraction);
-      document.removeEventListener('touchstart', handleUserInteraction);
-    };
   }, []);
 
   async function onSubmit() {
@@ -443,7 +414,7 @@ export default function Home() {
               maxHeight: "320px",
               overflowY: "scroll",
               paddingRight: "8px",
-              scrollbarWidth: "thin",
+              scrollbarWidth: "none",
               scrollbarColor: "#4a4a4a #f0f0f0"
             }}
           >
