@@ -37,18 +37,23 @@ export default function Home() {
     return welcomeMessages[randomIndex];
   };
 
-  const startConversation = async () => {
-    try {
-      // Request microphone permission
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      stream.getTracks().forEach(track => track.stop()); // Stop the stream after getting permission
+  const startConversation = () => {
+    const welcomeMessage = getRandomWelcomeMessage();
+    setCurrentMessage(welcomeMessage);
+    setConversationStep(-1);
+    handleSpeech(welcomeMessage);
+  };
 
-      // Initialize audio context
+  const handleMicrophoneClick = async () => {
+    try {
+      // Request microphone permission and initialize audio
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach(track => track.stop());
+
       if (!audioContextRef.current) {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         audioContextRef.current = new AudioContext();
         
-        // Resume audio context if it's suspended (required for mobile)
         if (audioContextRef.current.state === 'suspended') {
           await audioContextRef.current.resume();
         }
@@ -57,15 +62,11 @@ export default function Home() {
         console.log('Audio context initialized:', audioContextRef.current.state);
       }
 
-      const welcomeMessage = getRandomWelcomeMessage();
-      setCurrentMessage(welcomeMessage);
-      setConversationStep(-1);
-      handleSpeech(welcomeMessage);
+      setIsListening(true);
+      setSpeechInstruction(false);
     } catch (error) {
       console.error('Error initializing audio:', error);
-      // Provide fallback for mobile devices
-      setIsAudioInitialized(false);
-      alert('Please allow microphone access to hear Jung\'s responses.');
+      alert('Please allow microphone access to interact with Jung.');
     }
   };
 
@@ -213,15 +214,17 @@ export default function Home() {
     setCurrentMessage(data);
 
     try {
-      // Check if audio context is initialized
+      // Initialize audio context if not already done
       if (!audioContextRef.current) {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         audioContextRef.current = new AudioContext();
-      }
-
-      // Resume audio context if it's suspended (required for mobile)
-      if (audioContextRef.current.state === 'suspended') {
-        await audioContextRef.current.resume();
+        
+        if (audioContextRef.current.state === 'suspended') {
+          await audioContextRef.current.resume();
+        }
+        
+        setIsAudioInitialized(true);
+        console.log('Audio context initialized:', audioContextRef.current.state);
       }
 
       // Fetch audio data
@@ -509,10 +512,7 @@ export default function Home() {
                         </h4>
                       )}
                       <button
-                        onClick={() => {
-                          setIsListening(true);
-                          setSpeechInstruction(false);
-                        }}
+                        onClick={handleMicrophoneClick}
                         style={{
                           width: "120px",
                           height: "120px",
