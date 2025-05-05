@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import Head from "next/head";
+import { booksList } from "../booksList";
 
 export default function Home() {
   const [inputMethod, setInputMethod] = useState("SPEECH");
@@ -120,7 +121,8 @@ export default function Home() {
         },
         body: JSON.stringify({
           dream: dream,
-          conversationHistory: conversationHistory
+          conversationHistory: conversationHistory,
+          booksList: booksList
         }),
       });
 
@@ -419,267 +421,248 @@ export default function Home() {
         <title>Ask Jung</title>
       </Head>
 
-      <div className="App">
-        <header className="App-header" style={{
-          width: "100%",
-          height: "100vh",
-          position: "relative",
-          overflow: "hidden",
-          padding: 0,
-          margin: 0,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center"
-        }}>
-          <div style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center"
-          }}>
-            {isAudioPlaying && (
-              <div style={{
-                position: "absolute",
-                bottom: "24px",
-                left: "50%",
-                transform: "translateX(-50%)",
-                width: "90%",
-                maxWidth: "600px",
-                backgroundColor: "white",
-                padding: "15px",
-                boxShadow: "0 2px 10px rgba(0,0,0,0.2)",
-                zIndex: 2,
-                borderRadius: "10px",
-                overflow: "hidden"
-              }}>
-                <div
-                  ref={scrollContainerRef}
-                  style={{
-                    maxHeight: "30vh",
-                    overflowY: "auto",
-                    paddingRight: "10px",
-                    scrollbarWidth: "thin",
-                    scrollbarColor: "#4a4a4a #f0f0f0"
-                  }}
-                >
-                  <p style={{
-                    margin: 0,
-                    color: "black",
-                    fontSize: "1.2em",
-                    lineHeight: "1.5",
-                    whiteSpace: "pre-wrap"
-                  }}>
-                    {currentMessage}
-                  </p>
-                </div>
-              </div>
-            )}
-            <img
-              src={isTransitioning ? "jung_inhale_ext.png" : currentSprite}
-              alt="Carl Jung portrait"
-              style={{
-                width: "80%", // Reduced size
-                height: "auto",
-                objectFit: "contain",
-                position: "absolute",
-                top: "15%", // Moved higher
-                left: "50%",
-                transform: "translateX(-50%)"
-              }}
-            />
-          </div>
 
-          {!isJungSpeaking && (
-            <div style={{
-              position: "absolute",
-              bottom: 0,
-              left: 0,
-              right: 0,
-              zIndex: 1,
-              textAlign: "center",
-              padding: "20px",
-              backgroundColor: "white"
+      {/* JUNG SPEECH BUBBLE */}
+      {isAudioPlaying && (
+        <div style={{
+          position: "fixed",
+          bottom: "24px",
+          left: "50%",
+          transform: "translateX(-50%)",
+          width: "calc(100vw - 48px)",
+          backgroundColor: "white",
+          padding: "16px",
+          boxShadow: "0 2px 10px rgba(0,0,0,0.2)",
+          zIndex: 2,
+          borderRadius: "8px",
+          overflow: "hidden"
+        }}>
+          <div
+            ref={scrollContainerRef}
+            style={{
+              maxHeight: "320px",
+              overflowY: "scroll",
+              paddingRight: "8px",
+              scrollbarWidth: "thin",
+              scrollbarColor: "#4a4a4a #f0f0f0"
+            }}
+          >
+            <p style={{
+              color: "black",
+              fontSize: "1.2em",
+              lineHeight: "1.5",
+              whiteSpace: "pre-wrap"
             }}>
-              {conversationStep === -2 ? (
-                <button
-                  onClick={startConversation}
-                  style={{
-                    width: "200px",
-                    height: "60px",
-                    fontSize: "1.2em",
-                    backgroundColor: "#4a4a4a",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "8px",
-                    cursor: "pointer"
-                  }}
-                >
-                  Begin
-                </button>
-              ) : conversationStep === 2 ? (
+              {currentMessage}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* JUNG PORTRAIT */}
+      <div style={{
+        width: "100vw",
+        height: "100vh",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center"
+      }}>
+        <img
+          src={isTransitioning ? "jung_inhale_ext.png" : currentSprite}
+          alt="Carl Jung portrait"
+          style={{
+            width: "100%",
+            maxHeight: "100vh"
+          }}
+        />
+      </div>
+
+      {/* JUNG SPEECH INTERACTION */}
+      {!isJungSpeaking && (
+        <div style={{
+          position: "fixed",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          zIndex: 1,
+          textAlign: "center",
+          padding: "16px",
+          backgroundColor: "white"
+        }}>
+          {conversationStep === -2 ? (
+            <button
+              onClick={startConversation}
+              style={{
+                width: "200px",
+                height: "60px",
+                fontSize: "1.2em",
+                backgroundColor: "#4a4a4a",
+                color: "white",
+                border: "none",
+                borderRadius: "8px",
+                cursor: "pointer"
+              }}
+            >
+              Begin
+            </button>
+          ) : conversationStep === 2 ? (
+            <>
+              <p style={{ marginBottom: "20px", color: "black" }}>Thank you for sharing your dream. I hope my analysis and book recommendation have been helpful.</p>
+              <p
+                onClick={resetConversation}
+                style={{
+                  textDecoration: "underline",
+                  cursor: "pointer",
+                  color: "#ff4444",
+                  fontSize: "1.2em",
+                  fontWeight: "bold"
+                }}
+              >
+                Start New Conversation
+              </p>
+            </>
+          ) : (
+            <>
+              {inputMethod === "SPEECH" ? (
                 <>
-                  <p style={{ marginBottom: "20px", color: "black" }}>Thank you for sharing your dream. I hope my analysis and book recommendation have been helpful.</p>
-                  <p
-                    onClick={resetConversation}
-                    style={{
-                      textDecoration: "underline",
-                      cursor: "pointer",
-                      color: "#ff4444",
-                      fontSize: "1.2em",
-                      fontWeight: "bold"
-                    }}
-                  >
-                    Start New Conversation
-                  </p>
-                </>
-              ) : (
-                <>
-                  {inputMethod === "SPEECH" ? (
-                    <>
-                      {!isListening ? (
-                        <div>
-                          {speechInstruction && (
-                            <h4 style={{ marginBottom: "24px" }}>
-                              Tap the microphone and describe your dream
-                            </h4>
-                          )}
-                          <button
-                            onClick={() => {
-                              setIsListening(true);
-                              setSpeechInstruction(false);
-                            }}
-                            style={{
-                              width: "120px",
-                              height: "120px",
-                              borderRadius: "50%",
-                              backgroundColor: "white",
-                              border: "none",
-                              cursor: "pointer",
-                              filter: "invert(1)",
-                              padding: "16px",
-                            }}>
-                            <img src="/icon_mic.png" alt="microphone" style={{ width: "100%", height: "100%" }} />
-                          </button>
-                        </div>
-                      ) : (
-                        <>
-                          <p style={{
-                            color: "black",
-                            fontSize: "1.4em",
-                            marginBottom: "20px",
-                          }}>
-                            {dream || "Listening..."}
-                          </p>
-                          <div style={{
-                            display: "flex",
-                            gap: "20px",
-                            justifyContent: "center"
-                          }}>
-                            <button
-                              onClick={() => {
-                                setIsListening(false);
-                                onSubmit();
-                              }}
-                              style={{
-                                width: "120px",
-                                height: "60px",
-                                fontSize: "1.2em",
-                                backgroundColor: "#4a4a4a",
-                                color: "white",
-                                border: "none",
-                                borderRadius: "8px",
-                                cursor: "pointer"
-                              }}
-                            >
-                              Submit
-                            </button>
-                            <button
-                              onClick={() => {
-                                setIsListening(false);
-                                setDream("");
-                                setIsListening(true);
-                              }}
-                              style={{
-                                width: "120px",
-                                height: "60px",
-                                fontSize: "1.2em",
-                                backgroundColor: "#4a4a4a",
-                                color: "white",
-                                border: "none",
-                                borderRadius: "8px",
-                                cursor: "pointer"
-                              }}
-                            >
-                              Start Over
-                            </button>
-                          </div>
-                        </>
+                  {!isListening ? (
+                    <div>
+                      {speechInstruction && (
+                        <h4 style={{ marginBottom: "24px" }}>
+                          Tap the microphone and describe your dream
+                        </h4>
                       )}
-                    </>
-                  ) : (
-                    <form onSubmit={(e) => {
-                      e.preventDefault();
-                      if (!dream.trim()) {
-                        handleSpeech("Please share your dream with me. I cannot analyze what I cannot see.");
-                        return;
-                      }
-                      onSubmit();
-                    }}>
-                      <textarea
-                        value={dream}
-                        onChange={handleChange}
-                        placeholder={
-                          conversationStep === -1
-                            ? "Waiting for Jung's welcome message..."
-                            : conversationStep === 0
-                              ? "Describe your dream..."
-                              : conversationStep === 1
-                                ? "Answer the follow-up question..."
-                                : "Share your thoughts..."
-                        }
-                        style={{
-                          width: "80%",
-                          maxWidth: "400px",
-                          height: "120px", // Reduced height
-                          marginBottom: "20px",
-                          padding: "10px",
-                          borderRadius: "8px",
-                          border: "none"
+                      <button
+                        onClick={() => {
+                          setIsListening(true);
+                          setSpeechInstruction(false);
                         }}
-                        disabled={conversationStep === -1}
-                      />
-                      <div>
-                        <button type="submit" style={{
-                          width: "80%",
-                          maxWidth: "400px",
-                          height: "40px",
-                          backgroundColor: "#4a4a4a",
-                          color: "white",
+                        style={{
+                          width: "120px",
+                          height: "120px",
+                          borderRadius: "50%",
+                          backgroundColor: "white",
                           border: "none",
-                          borderRadius: "8px",
-                          cursor: "pointer"
-                        }} disabled={conversationStep === -1}>
-                          {conversationStep === -1
-                            ? "Waiting for Jung..."
-                            : conversationStep === 0
-                              ? "Analyze Dream"
-                              : conversationStep === 1
-                                ? "Continue Analysis"
-                                : "Get Book Recommendation"}
+                          cursor: "pointer",
+                          filter: "invert(1)",
+                          padding: "16px",
+                        }}>
+                        <img src="/icon_mic.png" alt="microphone" style={{ width: "100%", height: "100%" }} />
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <p style={{
+                        color: "black",
+                        fontSize: "1.4em",
+                        marginBottom: "20px",
+                      }}>
+                        {dream || "Listening..."}
+                      </p>
+                      <div style={{
+                        display: "flex",
+                        gap: "20px",
+                        justifyContent: "center"
+                      }}>
+                        <button
+                          onClick={() => {
+                            setIsListening(false);
+                            onSubmit();
+                          }}
+                          style={{
+                            width: "120px",
+                            height: "60px",
+                            fontSize: "1.2em",
+                            backgroundColor: "#4a4a4a",
+                            color: "white",
+                            border: "none",
+                            borderRadius: "8px",
+                            cursor: "pointer"
+                          }}
+                        >
+                          Submit
+                        </button>
+                        <button
+                          onClick={() => {
+                            setIsListening(false);
+                            setDream("");
+                            setIsListening(true);
+                          }}
+                          style={{
+                            width: "120px",
+                            height: "60px",
+                            fontSize: "1.2em",
+                            backgroundColor: "#4a4a4a",
+                            color: "white",
+                            border: "none",
+                            borderRadius: "8px",
+                            cursor: "pointer"
+                          }}
+                        >
+                          Start Over
                         </button>
                       </div>
-                    </form>
+                    </>
                   )}
                 </>
+              ) : (
+                <form onSubmit={(e) => {
+                  e.preventDefault();
+                  if (!dream.trim()) {
+                    handleSpeech("Please share your dream with me. I cannot analyze what I cannot see.");
+                    return;
+                  }
+                  onSubmit();
+                }}>
+                  <textarea
+                    value={dream}
+                    onChange={handleChange}
+                    placeholder={
+                      conversationStep === -1
+                        ? "Waiting for Jung's welcome message..."
+                        : conversationStep === 0
+                          ? "Describe your dream..."
+                          : conversationStep === 1
+                            ? "Answer the follow-up question..."
+                            : "Share your thoughts..."
+                    }
+                    style={{
+                      width: "80%",
+                      maxWidth: "400px",
+                      height: "120px", // Reduced height
+                      marginBottom: "20px",
+                      padding: "10px",
+                      borderRadius: "8px",
+                      border: "none"
+                    }}
+                    disabled={conversationStep === -1}
+                  />
+                  <div>
+                    <button type="submit" style={{
+                      width: "80%",
+                      maxWidth: "400px",
+                      height: "40px",
+                      backgroundColor: "#4a4a4a",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "8px",
+                      cursor: "pointer"
+                    }} disabled={conversationStep === -1}>
+                      {conversationStep === -1
+                        ? "Waiting for Jung..."
+                        : conversationStep === 0
+                          ? "Analyze Dream"
+                          : conversationStep === 1
+                            ? "Continue Analysis"
+                            : "Get Book Recommendation"}
+                    </button>
+                  </div>
+                </form>
               )}
-            </div>
+            </>
           )}
-        </header>
-      </div>
+        </div>
+      )}
     </div>
   );
 }

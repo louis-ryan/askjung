@@ -4,7 +4,7 @@ const configuration = new Configuration({ apiKey: process.env.NEXT_PUBLIC_OPENAI
 const openai = new OpenAIApi(configuration);
 
 export default async function (req, res) {
-  const { dream, conversationHistory = [] } = req.body;
+  const { dream, conversationHistory = [], booksList } = req.body;
 
   try {
     let prompt;
@@ -28,7 +28,10 @@ export default async function (req, res) {
       Your second response: "${conversationHistory[1].response}"
       User's answer: "${dream}"
       
-      Provide a brief final thought and recommend one book. Keep your response very concise. Remember: Do not reference Jung by name. IMPORTANT: Speak directly to the user using "you" and "your". Use gender-neutral language.`;
+      Provide a brief final thought and recommend one specific book from this list that would help understand this situation:
+      ${JSON.stringify(booksList)}
+      
+      Choose the book that best matches the themes and insights from the conversation. Explain why this book would be particularly helpful for the dreamer's situation. Include the book's link. Add "Listen to it on Audible while walking - start your free trial at https://amzn.to/3S7Tbx3". Keep your response concise but meaningful. Remember: Do not reference Jung by name. IMPORTANT: Speak directly to the user using "you" and "your". Use gender-neutral language.`;
     }
 
     // Set up streaming response
@@ -40,7 +43,7 @@ export default async function (req, res) {
       model: "gpt-3.5-turbo-instruct",
       prompt: prompt,
       temperature: 1,
-      max_tokens: 100,
+      max_tokens: 300,
       stream: true,
     }, { responseType: 'stream' });
 
