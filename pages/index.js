@@ -39,6 +39,10 @@ export default function Home() {
 
   const startConversation = async () => {
     try {
+      // Request microphone permission
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach(track => track.stop()); // Stop the stream after getting permission
+
       // Initialize audio context
       if (!audioContextRef.current) {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -61,6 +65,7 @@ export default function Home() {
       console.error('Error initializing audio:', error);
       // Provide fallback for mobile devices
       setIsAudioInitialized(false);
+      alert('Please allow microphone access to hear Jung\'s responses.');
     }
   };
 
