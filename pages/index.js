@@ -8,7 +8,7 @@ export default function Home() {
   const [analysis, setAnalysis] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [conversationHistory, setConversationHistory] = useState([]);
-  const [conversationStep, setConversationStep] = useState(0); // Start at -2 for initial state
+  const [conversationStep, setConversationStep] = useState(0);
   const [currentSprite, setCurrentSprite] = useState("jung_neutral_ext.png");
   const [isJungSpeaking, setIsJungSpeaking] = useState(false);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
