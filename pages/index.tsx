@@ -1,29 +1,41 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, ChangeEvent, FormEvent } from "react";
 import Head from "next/head";
 import { booksList } from "../booksList";
+import BookRecommendationModal from "../components/BookRecommendationModal";
+
+interface ConversationEntry {
+  dream: string;
+  response: string;
+}
+
+type InputMethod = "SPEECH" | "TEXT";
 
 export default function Home() {
-  const [inputMethod, setInputMethod] = useState("SPEECH");
-  const [dream, setDream] = useState('');
-  const [analysis, setAnalysis] = useState('');
-  const [isListening, setIsListening] = useState(false);
-  const [conversationHistory, setConversationHistory] = useState([]);
-  const [conversationStep, setConversationStep] = useState(0);
-  const [currentSprite, setCurrentSprite] = useState("jung_neutral_ext.png");
-  const [isJungSpeaking, setIsJungSpeaking] = useState(false);
-  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
-  const [isTransitioning, setIsTransitioning] = useState(false);
-  const [currentMessage, setCurrentMessage] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [isAudioInitialized, setIsAudioInitialized] = useState(false);
-  const [speechInstruction, setSpeechInstruction] = useState(true);
-  const animationRef = useRef(null);
-  const blinkRef = useRef(null);
-  const audioContextRef = useRef(null);
-  const scrollContainerRef = useRef(null);
+  const [inputMethod, setInputMethod] = useState<InputMethod>("SPEECH");
+  const [dream, setDream] = useState<string>('');
+  const [analysis, setAnalysis] = useState<string>('');
+  const [isListening, setIsListening] = useState<boolean>(false);
+  const [conversationHistory, setConversationHistory] = useState<ConversationEntry[]>([]);
+  const [conversationStep, setConversationStep] = useState<number>(0);
+  const conversationStepRef = useRef(conversationStep);
+  const [currentSprite, setCurrentSprite] = useState<string>("jung_neutral_ext.png");
+  const [isJungSpeaking, setIsJungSpeaking] = useState<boolean>(false);
+  const [isAudioPlaying, setIsAudioPlaying] = useState<boolean>(false);
+  const [isTransitioning, setIsTransitioning] = useState<boolean>(false);
+  const [currentMessage, setCurrentMessage] = useState<string>('');
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isAudioInitialized, setIsAudioInitialized] = useState<boolean>(false);
+  const [speechInstruction, setSpeechInstruction] = useState<boolean>(true);
+  const [isBookModalOpen, setIsBookModalOpen] = useState<boolean>(false);
+  const [recommendedBook, setRecommendedBook] = useState<null | typeof booksList[0]>(null);
+  
+  const animationRef = useRef<NodeJS.Timeout | null>(null);
+  const blinkRef = useRef<NodeJS.Timeout | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
   // Welcome messages
-  const welcomeMessages = [
+  const welcomeMessages: string[] = [
     "Welcome, dear dreamer.",
     "Greetings, seeker of the unconscious.",
     "Hello, fellow explorer of the psyche.",
@@ -32,27 +44,29 @@ export default function Home() {
     "Hello, and welcome to our exploration of the unconscious mind."
   ];
 
-  const getRandomWelcomeMessage = () => {
+  const getRandomWelcomeMessage = (): string => {
     const randomIndex = Math.floor(Math.random() * welcomeMessages.length);
     return welcomeMessages[randomIndex];
   };
 
-  const startConversation = () => {
+  const startConversation = (): void => {
     const welcomeMessage = getRandomWelcomeMessage();
     setCurrentMessage(welcomeMessage);
     setConversationStep(-1);
     handleSpeech(welcomeMessage);
   };
 
-  const handleMicrophoneClick = async () => {
+  const handleMicrophoneClick = async (): Promise<void> => {
     try {
-      // Request microphone permission and initialize audio
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       stream.getTracks().forEach(track => track.stop());
 
       if (!audioContextRef.current) {
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        audioContextRef.current = new AudioContext();
+        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+        if (!AudioContextClass) {
+          throw new Error('AudioContext not supported');
+        }
+        audioContextRef.current = new AudioContextClass();
         
         if (audioContextRef.current.state === 'suspended') {
           await audioContextRef.current.resume();
@@ -71,16 +85,19 @@ export default function Home() {
   };
 
   useEffect(() => {
-    // Play welcome message when component mounts
     if (conversationStep === -1) {
       handleSpeech(getRandomWelcomeMessage());
     }
   }, []);
 
-  async function onSubmit() {
+  useEffect(() => {
+    conversationStepRef.current = conversationStep;
+  }, [conversationStep]);
+
+  async function onSubmit(): Promise<void> {
     try {
+      console.log('[STEP]', conversationStep, '| onSubmit called');
       if (!dream.trim()) {
-        // Show reminder message if input is empty
         handleSpeech("Please share your dream with me. I cannot analyze what I cannot see.");
         return;
       }
@@ -88,57 +105,26 @@ export default function Home() {
       setIsLoading(true);
       setCurrentSprite("jung_inhale_ext.png");
       setIsTransitioning(true);
-      setIsListening(false); // Ensure microphone is turned off
+      setIsListening(false);
 
       let fullResponse = '';
-      const response = await fetch("/api/generate", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          dream: dream,
-          conversationHistory: conversationHistory,
-          booksList: booksList
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Request failed with status ${response.status}`);
-      }
-
-      const reader = response.body.getReader();
+      let apiBody = {
+        dream: dream,
+        conversationHistory: conversationHistory,
+        booksList: booksList
+      };
       const decoder = new TextDecoder();
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value);
-        const lines = chunk.split('\n').filter(line => line.trim() !== '');
-
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            try {
-              const data = JSON.parse(line.slice(6));
-              if (data.text) {
-                fullResponse += data.text;
-                setCurrentMessage(fullResponse);
-              }
-            } catch (error) {
-              console.error('Error parsing chunk:', error);
-            }
-          }
-        }
+      // User input steps: 0, 2, 4
+      if ([0, 2, 4].includes(conversationStep)) {
+        console.log(`[STEP] User input at step ${conversationStep}`);
+        setConversationStep(conversationStep + 1);
+        setDream('');
+        // After state update, fetch Jung's response
+        setTimeout(() => fetchJungResponse(apiBody, conversationStep + 1), 0);
+        setIsLoading(false);
+        return;
       }
-
-      setAnalysis(fullResponse);
-      setConversationHistory([...conversationHistory, { dream, response: fullResponse }]);
-      setConversationStep(conversationStep + 1);
-      setDream('');
-
-      handleSpeech(fullResponse);
-
     } catch (error) {
       console.error("on submit err: ", error);
       setCurrentSprite("jung_neutral_ext.png");
@@ -148,41 +134,99 @@ export default function Home() {
     }
   }
 
-  /**
-   * Speech-to-text
-   */
+  async function fetchJungResponse(apiBody: any, step: number) {
+    try {
+      console.log('[STEP]', step, '| fetchJungResponse called');
+      let promptType = '';
+      let fetchBody = { ...apiBody, step };
+      const decoder = new TextDecoder();
+      if (step === 1 || step === 3) {
+        promptType = 'regular analysis';
+      } else if (step === 5) {
+        promptType = 'book recommendation';
+      } else if (step === 6) {
+        promptType = 'audible encouragement';
+      }
+      console.log(`[STEP] Fetching Jung response for: ${promptType}`);
+      const response = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(fetchBody),
+      });
+      if (!response.ok) {
+        throw new Error(`Request failed with status ${response.status}`);
+      }
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error('Response body is null');
+      let responseText = '';
+      if (step === 5) {
+        setCurrentMessage(""); // Clear any previous message before book recommendation
+      }
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n').filter((line: string) => line.trim() !== '');
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              if (data.text) {
+                responseText += data.text;
+                setCurrentMessage(responseText);
+              }
+            } catch (error) {}
+          }
+        }
+      }
+      console.log(`[STEP] Jung response at step ${step}:`, responseText);
+      setAnalysis(responseText);
+      setConversationHistory(prev => [...prev, { dream: apiBody.dream, response: responseText }]);
+      handleSpeech(responseText);
+      // Only auto-increment for steps before 5
+      if (step < 5) {
+        setConversationStep(step + 1);
+      }
+      // For step 5, stay on step 5 until user clicks Continue
+      // For step 6, do not increment (end of flow)
+    } catch (error) {
+      console.error("fetchJungResponse err: ", error);
+      setCurrentSprite("jung_neutral_ext.png");
+      setIsTransitioning(false);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
   useEffect(() => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (SpeechRecognition) {
-      const recognition = new SpeechRecognition();
+    const SpeechRecognitionClass = window.SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (SpeechRecognitionClass) {
+      const recognition = new SpeechRecognitionClass();
 
       recognition.continuous = true;
       recognition.interimResults = true;
-      recognition.lang = 'en-US'; // Set language explicitly
+      recognition.lang = 'en-US';
 
       recognition.onstart = () => {
         console.log('Voice recognition started. Speak into the microphone.');
       };
 
-      recognition.onresult = (event) => {
+      recognition.onresult = (event: SpeechRecognitionEvent) => {
         const current = event.resultIndex;
         const transcript = event.results[current][0].transcript;
         setDream(transcript);
       };
 
-      recognition.onerror = (event) => {
-        // Only log errors that aren't expected aborts
+      recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
         if (event.error !== 'aborted') {
           console.error('Speech recognition error:', event.error);
           if (event.error === 'not-allowed') {
-            // Handle permission denied
             alert('Please enable microphone access in your browser settings.');
           }
         }
       };
 
       recognition.onend = () => {
-        // Only log if we're still in listening mode (unexpected end)
         if (isListening) {
           console.log('Voice recognition stopped unexpectedly.');
         }
@@ -203,21 +247,22 @@ export default function Home() {
       return () => recognition.abort();
     } else {
       console.warn('Speech recognition not available');
-      // Provide fallback for browsers without speech recognition
       alert('Speech recognition is not supported in your browser. Please use a modern browser like Chrome.');
     }
   }, [isListening]);
 
-  const handleSpeech = async (data) => {
+  const handleSpeech = async (data: string): Promise<void> => {
     console.log("Starting speech handling");
     setIsJungSpeaking(true);
     setCurrentMessage(data);
 
     try {
-      // Initialize audio context if not already done
       if (!audioContextRef.current) {
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        audioContextRef.current = new AudioContext();
+        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+        if (!AudioContextClass) {
+          throw new Error('AudioContext not supported');
+        }
+        audioContextRef.current = new AudioContextClass();
         
         if (audioContextRef.current.state === 'suspended') {
           await audioContextRef.current.resume();
@@ -227,7 +272,6 @@ export default function Home() {
         console.log('Audio context initialized:', audioContextRef.current.state);
       }
 
-      // Fetch audio data
       const response = await fetch('/api/speech', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -238,9 +282,10 @@ export default function Home() {
         throw new Error('Failed to generate speech');
       }
 
-      // Stream the audio data
-      const reader = response.body.getReader();
-      const chunks = [];
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error('Response body is null');
+      
+      const chunks: Uint8Array[] = [];
       let totalLength = 0;
 
       while (true) {
@@ -251,7 +296,6 @@ export default function Home() {
         totalLength += value.length;
       }
 
-      // Concatenate chunks into a single Uint8Array
       const audioData = new Uint8Array(totalLength);
       let position = 0;
       for (const chunk of chunks) {
@@ -259,20 +303,16 @@ export default function Home() {
         position += chunk.length;
       }
 
-      // Decode audio data in a separate task to prevent blocking
       const buffer = await audioContextRef.current.decodeAudioData(audioData.buffer);
 
-      // Create and configure audio source
       const source = audioContextRef.current.createBufferSource();
       source.buffer = buffer;
       source.playbackRate.value = 0.75;
       source.connect(audioContextRef.current.destination);
 
-      // Set playing state
       setIsAudioPlaying(true);
       console.log("Audio playing state set to true");
 
-      // Start auto-scroll after a short delay
       setTimeout(() => {
         if (scrollContainerRef.current) {
           const container = scrollContainerRef.current;
@@ -286,7 +326,7 @@ export default function Home() {
             const additionalDuration = Math.floor(scrollDistance / 100) * 2000;
             const duration = baseDuration + additionalDuration;
 
-            const animateScroll = (currentTime) => {
+            const animateScroll = (currentTime: number) => {
               const elapsed = currentTime - startTime;
               const progress = Math.min(elapsed / duration, 1);
               const currentScroll = progress * scrollDistance;
@@ -302,7 +342,6 @@ export default function Home() {
         }
       }, 500);
 
-      // Handle audio completion
       source.onended = () => {
         console.log("Audio ended");
         if (animationRef.current) {
@@ -314,16 +353,25 @@ export default function Home() {
         setIsAudioPlaying(false);
         setDream("");
         setAnalysis("");
-        setConversationStep(0);
+
+        // Auto-advance from step 5 to 6 when audio ends, using ref for latest value
+        if (conversationStepRef.current === 5) {
+          const apiBody = {
+            dream: dream,
+            conversationHistory: conversationHistory,
+            booksList: booksList
+          };
+          fetchJungResponse(apiBody, 6);
+          setConversationStep(6);
+        }
+        // Do NOT close the modal after step 6; leave it open as the final screen
       };
 
-      // Start the mouth animation and end transition just before starting the audio
       setIsTransitioning(false);
       animationRef.current = setInterval(() => {
         setCurrentSprite(prev => prev === "jung_neutral_ext.png" ? "jung_open_mouth_ext.png" : "jung_neutral_ext.png");
       }, 300);
 
-      // Start playback
       source.start(0);
       console.log("Audio source started");
 
@@ -337,25 +385,23 @@ export default function Home() {
       setIsAudioPlaying(false);
       setCurrentSprite("jung_neutral_ext.png");
       setIsTransitioning(false);
-      // Provide user feedback for mobile-specific errors
-      if (error.message.includes('AudioContext')) {
+      if (error instanceof Error && error.message.includes('AudioContext')) {
         alert('Audio playback is not supported. Please try a different browser or device.');
       }
     }
   };
 
-  const handleChange = (event) => {
+  const handleChange = (event: ChangeEvent<HTMLTextAreaElement>): void => {
     setDream(event.target.value);
   };
 
-  const resetConversation = () => {
+  const resetConversation = (): void => {
     setConversationHistory([]);
     setConversationStep(-2);
     setDream('');
     setAnalysis('');
   };
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (animationRef.current) {
@@ -364,17 +410,15 @@ export default function Home() {
     };
   }, []);
 
-  // Add blinking animation
   useEffect(() => {
     if (!isJungSpeaking) {
       const blink = () => {
         setCurrentSprite("jung_blink_ext.png");
         setTimeout(() => {
           setCurrentSprite("jung_neutral_ext.png");
-        }, 200); // Blink duration
+        }, 200);
       };
 
-      // Random interval between 2-5 seconds
       const getRandomInterval = () => Math.floor(Math.random() * 3000) + 2000;
 
       const scheduleBlink = () => {
@@ -394,15 +438,41 @@ export default function Home() {
     };
   }, [isJungSpeaking]);
 
+  // Helper to extract book from Jung's recommendation
+  function extractBookFromResponse(response: string) {
+    // Try to find a book title from booksList in the response
+    for (const book of booksList) {
+      // Case-insensitive match
+      if (response.toLowerCase().includes(book.title.toLowerCase())) {
+        return book;
+      }
+    }
+    return null;
+  }
+
+  useEffect(() => {
+    console.log('[STEP]', conversationStep, '| useEffect currentMessage:', currentMessage);
+    if (conversationStep === 6) {
+      // Use the book from the book recommendation step (step 5, which is conversationHistory[2])
+      const lastBookRec = conversationHistory[2];
+      if (lastBookRec) {
+        const book = extractBookFromResponse(lastBookRec.response);
+        if (book) {
+          setRecommendedBook(book);
+          setIsBookModalOpen(true);
+          console.log('[STEP] Modal should open for audible encouragement');
+        }
+      }
+    }
+  }, [conversationStep, currentMessage]);
+
   return (
     <div>
       <Head>
         <title>Ask Jung</title>
       </Head>
 
-
-      {/* JUNG SPEECH BUBBLE */}
-      {isAudioPlaying && (
+      {isAudioPlaying && !isBookModalOpen && conversationStep !== 6 && (
         <div style={{
           position: "fixed",
           bottom: "24px",
@@ -438,7 +508,6 @@ export default function Home() {
         </div>
       )}
 
-      {/* JUNG PORTRAIT */}
       <div style={{
         width: "100vw",
         height: "100vh",
@@ -450,13 +519,12 @@ export default function Home() {
           src={isTransitioning ? "jung_inhale_ext.png" : currentSprite}
           alt="Carl Jung portrait"
           style={{
-            width: "100%",
+            maxWidth: "100%",
             maxHeight: "100vh"
           }}
         />
       </div>
 
-      {/* JUNG SPEECH INTERACTION */}
       {!isJungSpeaking && (
         <div style={{
           position: "fixed",
@@ -484,7 +552,7 @@ export default function Home() {
             >
               Begin
             </button>
-          ) : conversationStep === 2 ? (
+          ) : conversationStep === 7 ? (
             <>
               <p style={{ marginBottom: "20px", color: "black" }}>Thank you for sharing your dream. I hope my analysis and book recommendation have been helpful.</p>
               <p
@@ -582,63 +650,74 @@ export default function Home() {
                   )}
                 </>
               ) : (
-                <form onSubmit={(e) => {
-                  e.preventDefault();
-                  if (!dream.trim()) {
-                    handleSpeech("Please share your dream with me. I cannot analyze what I cannot see.");
-                    return;
-                  }
-                  onSubmit();
-                }}>
-                  <textarea
-                    value={dream}
-                    onChange={handleChange}
-                    placeholder={
-                      conversationStep === -1
-                        ? "Waiting for Jung's welcome message..."
-                        : conversationStep === 0
-                          ? "Describe your dream..."
-                          : conversationStep === 1
-                            ? "Answer the follow-up question..."
-                            : "Share your thoughts..."
+                [0, 2, 4].includes(conversationStep) ? (
+                  <form onSubmit={(e: FormEvent) => {
+                    e.preventDefault();
+                    if (!dream.trim()) {
+                      handleSpeech("Please share your dream with me. I cannot analyze what I cannot see.");
+                      return;
                     }
-                    style={{
-                      width: "80%",
-                      maxWidth: "400px",
-                      height: "120px", // Reduced height
-                      marginBottom: "20px",
-                      padding: "10px",
-                      borderRadius: "8px",
-                      border: "none"
-                    }}
-                    disabled={conversationStep === -1}
-                  />
-                  <div>
-                    <button type="submit" style={{
-                      width: "80%",
-                      maxWidth: "400px",
-                      height: "40px",
-                      backgroundColor: "#4a4a4a",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "8px",
-                      cursor: "pointer"
-                    }} disabled={conversationStep === -1}>
-                      {conversationStep === -1
-                        ? "Waiting for Jung..."
-                        : conversationStep === 0
+                    onSubmit();
+                  }}>
+                    <textarea
+                      value={dream}
+                      onChange={handleChange}
+                      placeholder={
+                        conversationStep === 0
+                          ? "Describe your dream..."
+                          : conversationStep === 2
+                            ? "Answer the follow-up question..."
+                            : conversationStep === 4
+                              ? "Share your thoughts..."
+                              : ""
+                      }
+                      style={{
+                        width: "80%",
+                        maxWidth: "400px",
+                        height: "120px",
+                        marginBottom: "20px",
+                        padding: "10px",
+                        borderRadius: "8px",
+                        border: "none"
+                      }}
+                      disabled={false}
+                    />
+                    <div>
+                      <button type="submit" style={{
+                        width: "80%",
+                        maxWidth: "400px",
+                        height: "40px",
+                        backgroundColor: "#4a4a4a",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "8px",
+                        cursor: "pointer"
+                      }}>
+                        {conversationStep === 0
                           ? "Analyze Dream"
-                          : conversationStep === 1
+                          : conversationStep === 2
                             ? "Continue Analysis"
-                            : "Get Book Recommendation"}
-                    </button>
-                  </div>
-                </form>
+                            : conversationStep === 4
+                              ? "Get Book Recommendation"
+                              : ""}
+                      </button>
+                    </div>
+                  </form>
+                ) : null
               )}
             </>
           )}
         </div>
       )}
+
+      {/* Book Recommendation Modal */}
+      {isBookModalOpen && recommendedBook && (
+        <BookRecommendationModal
+          open={isBookModalOpen}
+          book={recommendedBook}
+          onClose={() => setIsBookModalOpen(false)}
+        />
+      )}
     </div>
   );
-}
+} 

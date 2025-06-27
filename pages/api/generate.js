@@ -4,34 +4,24 @@ const configuration = new Configuration({ apiKey: process.env.NEXT_PUBLIC_OPENAI
 const openai = new OpenAIApi(configuration);
 
 export default async function (req, res) {
-  const { dream, conversationHistory = [], booksList } = req.body;
+  const { dream, conversationHistory = [], booksList, step } = req.body;
 
   try {
     let prompt;
-    if (conversationHistory.length === 0) {
+    if (step === 6) {
+      // Only return the Audible encouragement
+      prompt = `In one sentence, encourage the user to listen to the recommended book on Audible while walking. Tell them that if they do not have audible, they can download it using the provided link. Do not mention any other analysis or book details. Speak directly to the user.`;
+    } else if (step === 1) {
       // Initial dream analysis
       prompt = `You are Swiss psychologist, Carl Jung. In 2-3 sentences, analyze this dream: ${dream}. Focus on the most significant symbolic meaning. End with one brief question. Remember: Do not reference Jung by name as you are Jung yourself. Keep your tone poetic but concise. IMPORTANT: Speak directly to the user using "you" and "your". Use gender-neutral language.`;
-    } else if (conversationHistory.length === 1) {
+    } else if (step === 3) {
       // Second response - follow-up analysis
-      prompt = `You are Swiss psychologist, Carl Jung. In 2-3 sentences, analyze this conversation:
-      Dream: "${conversationHistory[0].dream}"
-      Your first response: "${conversationHistory[0].response}"
-      User's answer: "${dream}"
-      
-      Provide a brief analysis and end with one question. Remember: Do not reference Jung by name. Keep responses very concise. IMPORTANT: Speak directly to the user using "you" and "your". Use gender-neutral language.`;
+      prompt = `You are Swiss psychologist, Carl Jung. In 2-3 sentences, analyze this conversation:\nDream: "${conversationHistory[0].dream}"\nYour first response: "${conversationHistory[0].response}"\nUser's answer: "${dream}"\n\nProvide a brief analysis and end with one question. Remember: Do not reference Jung by name. Keep responses very concise. IMPORTANT: Speak directly to the user using "you" and "your". Use gender-neutral language.`;
+    } else if (step === 5) {
+      // Third response - book recommendation (without Audible encouragement)
+      prompt = `You are Swiss psychologist, Carl Jung. In 2-3 sentences, analyze this conversation and recommend a book:\nDream: "${conversationHistory[0].dream}"\nYour first response: "${conversationHistory[0].response}"\nUser's answer: "${conversationHistory[1].dream}"\nYour second response: "${conversationHistory[1].response}"\nUser's answer: "${dream}"\n\nProvide a brief final thought and recommend one specific book from this list that would help understand this situation:\n${JSON.stringify(booksList)}\n\nChoose the book that best matches the themes and insights from the conversation. Explain why this book would be particularly helpful for the dreamer's situation. Do NOT mention Audible or listening to the book yet. Keep your response concise but meaningful. Remember: Do not reference Jung by name. IMPORTANT: Speak directly to the user using "you" and "your". Use gender-neutral language.`;
     } else {
-      // Third response - book recommendation
-      prompt = `You are Swiss psychologist, Carl Jung. In 2-3 sentences, analyze this conversation and recommend a book:
-      Dream: "${conversationHistory[0].dream}"
-      Your first response: "${conversationHistory[0].response}"
-      User's answer: "${conversationHistory[1].dream}"
-      Your second response: "${conversationHistory[1].response}"
-      User's answer: "${dream}"
-      
-      Provide a brief final thought and recommend one specific book from this list that would help understand this situation:
-      ${JSON.stringify(booksList)}
-      
-      Choose the book that best matches the themes and insights from the conversation. Explain why this book would be particularly helpful for the dreamer's situation. Include the book's link. Add "Listen to it on Audible while walking - start your free trial at https://amzn.to/3S7Tbx3". Keep your response concise but meaningful. Remember: Do not reference Jung by name. IMPORTANT: Speak directly to the user using "you" and "your". Use gender-neutral language.`;
+      prompt = "";
     }
 
     // Set up streaming response
